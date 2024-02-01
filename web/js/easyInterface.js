@@ -13,105 +13,105 @@ const customXYLink = "#38291f"
 const STRINGLink = "#00aa8c"
 
 var customLinkColors = JSON.parse(localStorage.getItem('Comfy.Settings.ttN.customLinkColors')) || {};
-if (!customLinkColors["PIPE_LINE"] || !LGraphCanvas.link_type_colors["PIPE_LINE"]) {customLinkColors["PIPE_LINE"] = customPipeLineLink;}
-if (!customLinkColors["PIPE_LINE_SDXL"] || !LGraphCanvas.link_type_colors["PIPE_LINE_SDXL"]) {customLinkColors["PIPE_LINE_SDXL"] = customPipeLineSDXLLink;}
-if (!customLinkColors["INT"] || !LGraphCanvas.link_type_colors["INT"]) {customLinkColors["INT"] = customIntLink;}
-if (!customLinkColors["XYPLOT"] || !LGraphCanvas.link_type_colors["XYPLOT"]) {customLinkColors["XYPLOT"] = customXYPlotLink;}
-if (!customLinkColors["X_Y"] || !LGraphCanvas.link_type_colors["X_Y"]) {customLinkColors["X_Y"] = customXYLink;}
-if (!customLinkColors["STRING"] || !LGraphCanvas.link_type_colors["STRING"]) {customLinkColors["STRING"] = STRINGLink;}
+if (!customLinkColors["PIPE_LINE"] || !LGraphCanvas.link_type_colors["PIPE_LINE"]) { customLinkColors["PIPE_LINE"] = customPipeLineLink; }
+if (!customLinkColors["PIPE_LINE_SDXL"] || !LGraphCanvas.link_type_colors["PIPE_LINE_SDXL"]) { customLinkColors["PIPE_LINE_SDXL"] = customPipeLineSDXLLink; }
+if (!customLinkColors["INT"] || !LGraphCanvas.link_type_colors["INT"]) { customLinkColors["INT"] = customIntLink; }
+if (!customLinkColors["XYPLOT"] || !LGraphCanvas.link_type_colors["XYPLOT"]) { customLinkColors["XYPLOT"] = customXYPlotLink; }
+if (!customLinkColors["X_Y"] || !LGraphCanvas.link_type_colors["X_Y"]) { customLinkColors["X_Y"] = customXYLink; }
+if (!customLinkColors["STRING"] || !LGraphCanvas.link_type_colors["STRING"]) { customLinkColors["STRING"] = STRINGLink; }
 
 localStorage.setItem('Comfy.Settings.easyUse.customLinkColors', JSON.stringify(customLinkColors));
 
 // 增加自定义主题
 const ui = {
-  "version": 100,
-  "id": "obsidian",
-  "name": "黑曜石 by乱乱呀",
-  "colors": {
-      "node_slot": {
-          "CLIP": "#FFD500",
-          "CLIP_VISION": "#A8DADC",
-          "CLIP_VISION_OUTPUT": "#ad7452",
-          "CONDITIONING": "#FFA931",
-          "CONTROL_NET": "#6EE7B7",
-          "IMAGE": "#64B5F6",
-          "LATENT": "#FF9CF9",
-          "MASK": "#81C784",
-          "MODEL": "#B39DDB",
-          "STYLE_MODEL": "#C2FFAE",
-          "VAE": "#FF6E6E",
-          "TAESD": "#DCC274"
-      },
-      "litegraph_base": {
-          "BACKGROUND_IMAGE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAACXBIWXMAAAsTAAALEwEAmpwYAAAGlmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDEgNzkuMTQ2Mjg5OSwgMjAyMy8wNi8yNS0yMDowMTo1NSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjEgKFdpbmRvd3MpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyMy0xMS0xM1QwMDoxODowMiswMTowMCIgeG1wOk1vZGlmeURhdGU9IjIwMjMtMTEtMTVUMDI6MDQ6NTkrMDE6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjMtMTEtMTVUMDI6MDQ6NTkrMDE6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOmIyYzRhNjA5LWJmYTctYTg0MC1iOGFlLTk3MzE2ZjM1ZGIyNyIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjk0ZmNlZGU4LTE1MTctZmQ0MC04ZGU3LWYzOTgxM2E3ODk5ZiIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjIzMWIxMGIwLWI0ZmItMDI0ZS1iMTJlLTMwNTMwM2NkMDdjOCI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MjMxYjEwYjAtYjRmYi0wMjRlLWIxMmUtMzA1MzAzY2QwN2M4IiBzdEV2dDp3aGVuPSIyMDIzLTExLTEzVDAwOjE4OjAyKzAxOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMSAoV2luZG93cykiLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjQ4OWY1NzlmLTJkNjUtZWQ0Zi04OTg0LTA4NGE2MGE1ZTMzNSIgc3RFdnQ6d2hlbj0iMjAyMy0xMS0xNVQwMjowNDo1OSswMTowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI1LjEgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDpiMmM0YTYwOS1iZmE3LWE4NDAtYjhhZS05NzMxNmYzNWRiMjciIHN0RXZ0OndoZW49IjIwMjMtMTEtMTVUMDI6MDQ6NTkrMDE6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyNS4xIChXaW5kb3dzKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4OTe6GAAAAx0lEQVR42u3WMQoAIQxFwRzJys77X8vSLiRgITif7bYbgrwYc/mKXyBoY4VVBgsWLFiwYFmOlTv+9jfDOjHmr8u6eVkGCxYsWLBgmc5S8ApewXvgYRksWLBgKXidpeBdloL3wMOCBctgwVLwCl7BuyyDBQsWLFiwTGcpeAWv4D3wsAwWLFiwFLzOUvAuS8F74GHBgmWwYCl4Ba/gXZbBggULFixYprMUvIJX8B54WAYLFixYCl5nKXiXpeA98LBgwTJYsGC9tg1o8f4TTtqzNQAAAABJRU5ErkJggg==",
-          // "BACKGROUND_IMAGE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABjCAAAAABIjPowAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAQjSURBVGje7VpdTxwxDPQE2lL1har9/7+QtyK1VZGmD5vEE2c/vHBCJyBC6G43sdfjj+TGix+g1QG2fz4+P36+sb0B+/V1vEADzWBN0N1DMZoZYGbLVU5CjgaAsIJmRvrqYmZm5IYsTErnQdLM0B6HumL5XLCoW5MFMyYsaeK2H6dUGxCQ6YqPLdnGsSupj8Bwj4ZZ80kFHYbiQlpcUeZlfCJP7cKooooLCc4nd3EW+YhCaxA4XPAvqyF2DNccmgzBVNQZPWWgIo6RIkxiuK1yBAvcAgL1ubrZLU93LbEaOhxV97t2q6E1ADtVmHNDdZY9FAaVOxMnz2HALipRWEOI7KqhqkJ0ZFAiVa16MlG7jBVaOgIVaoxKJMFbUtbClxob6bYEWZGvobzE1dkRdiUOcC0uwPD9WZWr5gB67oiSHsBwaDOlfowPzzIPzjIIgfuv23uIl05vBbWnt5mNZWW9hpxBDNTa3Y0qoeiMwpGrXWoUR7yaT9ijDj2SzWdnalf8GvaVotgRLZJTzkjo1WQETSNvA4xjuDa0FUMohacNoBmmbWhQX6QmP/PMYGZc4sPPifU00g4SIn2ou7rpnIAL1E2pHSQ8mjFIzKMmXl5q/oRImVN7FJ/eHmE01v/Bxg6XPoCmzUm4qDW2O/vLvoT733/TuG2O259HM+5vX67k38F9Pu1PAB+/7c/49FDsFcY7UvL8WnNCCS+g5diSlxyIs0ouMa5DyQXQupLousR4R3C9iiWXGNeh5COEr8+Sjzw5peTtwPV2LLnEeDtwvaEfQX86adgaQfXTYugne9oHDPZ4ZyunWb9w91ACDU4zjtxezinrtKKSBY2ghpL7W6vX5Dtvh0hNdSXtNju7dZJ/HLiAmU13NnV6fnbl+yP8jm+sCVx9meeN3FrGDGU5QRVvwgszrKp/OYYbYFiJ3iVB5IVb72Qy68iSidWv9AoZGW40v1AD+AyJvkGbcaTRXV9/skyerDSbBBizTj6HCKGTX8e/fimRMrByDUcr9HAL7YKsT1rf2Mnx2Eku5jlYWTcIZEmXQNRFKt1i14GVGu4BkmowK68sldGBLqpBcGokeg4ubbZ6ZaQogWvwktCnHnP1lNUTB9u5+sZvd7lVBYXnTbmmQRSXFNM4GBqSNUhObPJSFQeTlHyOC5wfP/KJQ0C9NjQEOOmBEYHk3UPJpsIwEP9FCnN/pNbhONECXFGseUIMb3vEcpXwCVY+mSZDWaSuV6hcFxsc3Yx4tyUj/LZITQfWfPTwN0x8PxHnDc1YpDRhvuARw8OzMFOeH9rSCMvizmi9NAjM2dc96hJ/vcdfuyleCuvRa3q/4NCO1loaWjyUMC3S4qVXyfkUeITW3hZadKLn5WqwJXStz5b9ZKM0pN6Paf884VTbdfwIuvl+kxK0N/4D5hWoRYiuxvAAAAAASUVORK5CYII=",
-          "CLEAR_BACKGROUND_COLOR": "#101010",
-          "NODE_TITLE_COLOR": "rgba(255,255,255,.75)",
-          "NODE_SELECTED_TITLE_COLOR": "#FFF",
-          "NODE_TEXT_SIZE": 14,
-          "NODE_TEXT_COLOR": "#b8b8b8",
-          "NODE_SUBTEXT_SIZE": 12,
-          "NODE_DEFAULT_COLOR": "rgba(0,0,0,.8)",
-          "NODE_DEFAULT_BGCOLOR": "rgba(22,22,22,.8)",
-          "NODE_DEFAULT_BOXCOLOR": "rgba(255,255,255,.75)",
-          "NODE_DEFAULT_SHAPE": "box",
-          "NODE_BOX_OUTLINE_COLOR": customThemeColor,
-          "DEFAULT_SHADOW_COLOR": "rgba(0,0,0,0)",
-          "DEFAULT_GROUP_FONT": 24,
+    "version": 100,
+    "id": "obsidian",
+    "name": "黑曜石 by乱乱呀",
+    "colors": {
+        "node_slot": {
+            "CLIP": "#FFD500",
+            "CLIP_VISION": "#A8DADC",
+            "CLIP_VISION_OUTPUT": "#ad7452",
+            "CONDITIONING": "#FFA931",
+            "CONTROL_NET": "#6EE7B7",
+            "IMAGE": "#64B5F6",
+            "LATENT": "#FF9CF9",
+            "MASK": "#81C784",
+            "MODEL": "#B39DDB",
+            "STYLE_MODEL": "#C2FFAE",
+            "VAE": "#FF6E6E",
+            "TAESD": "#DCC274"
+        },
+        "litegraph_base": {
+            "BACKGROUND_IMAGE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAIAAAD/gAIDAAAACXBIWXMAAAsTAAALEwEAmpwYAAAGlmlUWHRYTUw6Y29tLmFkb2JlLnhtcAAAAAAAPD94cGFja2V0IGJlZ2luPSLvu78iIGlkPSJXNU0wTXBDZWhpSHpyZVN6TlRjemtjOWQiPz4gPHg6eG1wbWV0YSB4bWxuczp4PSJhZG9iZTpuczptZXRhLyIgeDp4bXB0az0iQWRvYmUgWE1QIENvcmUgOS4xLWMwMDEgNzkuMTQ2Mjg5OSwgMjAyMy8wNi8yNS0yMDowMTo1NSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczpkYz0iaHR0cDovL3B1cmwub3JnL2RjL2VsZW1lbnRzLzEuMS8iIHhtbG5zOnBob3Rvc2hvcD0iaHR0cDovL25zLmFkb2JlLmNvbS9waG90b3Nob3AvMS4wLyIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0RXZ0PSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VFdmVudCMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIDI1LjEgKFdpbmRvd3MpIiB4bXA6Q3JlYXRlRGF0ZT0iMjAyMy0xMS0xM1QwMDoxODowMiswMTowMCIgeG1wOk1vZGlmeURhdGU9IjIwMjMtMTEtMTVUMDI6MDQ6NTkrMDE6MDAiIHhtcDpNZXRhZGF0YURhdGU9IjIwMjMtMTEtMTVUMDI6MDQ6NTkrMDE6MDAiIGRjOmZvcm1hdD0iaW1hZ2UvcG5nIiBwaG90b3Nob3A6Q29sb3JNb2RlPSIzIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOmIyYzRhNjA5LWJmYTctYTg0MC1iOGFlLTk3MzE2ZjM1ZGIyNyIgeG1wTU06RG9jdW1lbnRJRD0iYWRvYmU6ZG9jaWQ6cGhvdG9zaG9wOjk0ZmNlZGU4LTE1MTctZmQ0MC04ZGU3LWYzOTgxM2E3ODk5ZiIgeG1wTU06T3JpZ2luYWxEb2N1bWVudElEPSJ4bXAuZGlkOjIzMWIxMGIwLWI0ZmItMDI0ZS1iMTJlLTMwNTMwM2NkMDdjOCI+IDx4bXBNTTpIaXN0b3J5PiA8cmRmOlNlcT4gPHJkZjpsaSBzdEV2dDphY3Rpb249ImNyZWF0ZWQiIHN0RXZ0Omluc3RhbmNlSUQ9InhtcC5paWQ6MjMxYjEwYjAtYjRmYi0wMjRlLWIxMmUtMzA1MzAzY2QwN2M4IiBzdEV2dDp3aGVuPSIyMDIzLTExLTEzVDAwOjE4OjAyKzAxOjAwIiBzdEV2dDpzb2Z0d2FyZUFnZW50PSJBZG9iZSBQaG90b3Nob3AgMjUuMSAoV2luZG93cykiLz4gPHJkZjpsaSBzdEV2dDphY3Rpb249InNhdmVkIiBzdEV2dDppbnN0YW5jZUlEPSJ4bXAuaWlkOjQ4OWY1NzlmLTJkNjUtZWQ0Zi04OTg0LTA4NGE2MGE1ZTMzNSIgc3RFdnQ6d2hlbj0iMjAyMy0xMS0xNVQwMjowNDo1OSswMTowMCIgc3RFdnQ6c29mdHdhcmVBZ2VudD0iQWRvYmUgUGhvdG9zaG9wIDI1LjEgKFdpbmRvd3MpIiBzdEV2dDpjaGFuZ2VkPSIvIi8+IDxyZGY6bGkgc3RFdnQ6YWN0aW9uPSJzYXZlZCIgc3RFdnQ6aW5zdGFuY2VJRD0ieG1wLmlpZDpiMmM0YTYwOS1iZmE3LWE4NDAtYjhhZS05NzMxNmYzNWRiMjciIHN0RXZ0OndoZW49IjIwMjMtMTEtMTVUMDI6MDQ6NTkrMDE6MDAiIHN0RXZ0OnNvZnR3YXJlQWdlbnQ9IkFkb2JlIFBob3Rvc2hvcCAyNS4xIChXaW5kb3dzKSIgc3RFdnQ6Y2hhbmdlZD0iLyIvPiA8L3JkZjpTZXE+IDwveG1wTU06SGlzdG9yeT4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4OTe6GAAAAx0lEQVR42u3WMQoAIQxFwRzJys77X8vSLiRgITif7bYbgrwYc/mKXyBoY4VVBgsWLFiwYFmOlTv+9jfDOjHmr8u6eVkGCxYsWLBgmc5S8ApewXvgYRksWLBgKXidpeBdloL3wMOCBctgwVLwCl7BuyyDBQsWLFiwTGcpeAWv4D3wsAwWLFiwFLzOUvAuS8F74GHBgmWwYCl4Ba/gXZbBggULFixYprMUvIJX8B54WAYLFixYCl5nKXiXpeA98LBgwTJYsGC9tg1o8f4TTtqzNQAAAABJRU5ErkJggg==",
+            // "BACKGROUND_IMAGE": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGQAAABjCAAAAABIjPowAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAAmJLR0QA/4ePzL8AAAQjSURBVGje7VpdTxwxDPQE2lL1har9/7+QtyK1VZGmD5vEE2c/vHBCJyBC6G43sdfjj+TGix+g1QG2fz4+P36+sb0B+/V1vEADzWBN0N1DMZoZYGbLVU5CjgaAsIJmRvrqYmZm5IYsTErnQdLM0B6HumL5XLCoW5MFMyYsaeK2H6dUGxCQ6YqPLdnGsSupj8Bwj4ZZ80kFHYbiQlpcUeZlfCJP7cKooooLCc4nd3EW+YhCaxA4XPAvqyF2DNccmgzBVNQZPWWgIo6RIkxiuK1yBAvcAgL1ubrZLU93LbEaOhxV97t2q6E1ADtVmHNDdZY9FAaVOxMnz2HALipRWEOI7KqhqkJ0ZFAiVa16MlG7jBVaOgIVaoxKJMFbUtbClxob6bYEWZGvobzE1dkRdiUOcC0uwPD9WZWr5gB67oiSHsBwaDOlfowPzzIPzjIIgfuv23uIl05vBbWnt5mNZWW9hpxBDNTa3Y0qoeiMwpGrXWoUR7yaT9ijDj2SzWdnalf8GvaVotgRLZJTzkjo1WQETSNvA4xjuDa0FUMohacNoBmmbWhQX6QmP/PMYGZc4sPPifU00g4SIn2ou7rpnIAL1E2pHSQ8mjFIzKMmXl5q/oRImVN7FJ/eHmE01v/Bxg6XPoCmzUm4qDW2O/vLvoT733/TuG2O259HM+5vX67k38F9Pu1PAB+/7c/49FDsFcY7UvL8WnNCCS+g5diSlxyIs0ouMa5DyQXQupLousR4R3C9iiWXGNeh5COEr8+Sjzw5peTtwPV2LLnEeDtwvaEfQX86adgaQfXTYugne9oHDPZ4ZyunWb9w91ACDU4zjtxezinrtKKSBY2ghpL7W6vX5Dtvh0hNdSXtNju7dZJ/HLiAmU13NnV6fnbl+yP8jm+sCVx9meeN3FrGDGU5QRVvwgszrKp/OYYbYFiJ3iVB5IVb72Qy68iSidWv9AoZGW40v1AD+AyJvkGbcaTRXV9/skyerDSbBBizTj6HCKGTX8e/fimRMrByDUcr9HAL7YKsT1rf2Mnx2Eku5jlYWTcIZEmXQNRFKt1i14GVGu4BkmowK68sldGBLqpBcGokeg4ubbZ6ZaQogWvwktCnHnP1lNUTB9u5+sZvd7lVBYXnTbmmQRSXFNM4GBqSNUhObPJSFQeTlHyOC5wfP/KJQ0C9NjQEOOmBEYHk3UPJpsIwEP9FCnN/pNbhONECXFGseUIMb3vEcpXwCVY+mSZDWaSuV6hcFxsc3Yx4tyUj/LZITQfWfPTwN0x8PxHnDc1YpDRhvuARw8OzMFOeH9rSCMvizmi9NAjM2dc96hJ/vcdfuyleCuvRa3q/4NCO1loaWjyUMC3S4qVXyfkUeITW3hZadKLn5WqwJXStz5b9ZKM0pN6Paf884VTbdfwIuvl+kxK0N/4D5hWoRYiuxvAAAAAASUVORK5CYII=",
+            "CLEAR_BACKGROUND_COLOR": "#101010",
+            "NODE_TITLE_COLOR": "rgba(255,255,255,.75)",
+            "NODE_SELECTED_TITLE_COLOR": "#FFF",
+            "NODE_TEXT_SIZE": 14,
+            "NODE_TEXT_COLOR": "#b8b8b8",
+            "NODE_SUBTEXT_SIZE": 12,
+            "NODE_DEFAULT_COLOR": "rgba(0,0,0,.8)",
+            "NODE_DEFAULT_BGCOLOR": "rgba(22,22,22,.8)",
+            "NODE_DEFAULT_BOXCOLOR": "rgba(255,255,255,.75)",
+            "NODE_DEFAULT_SHAPE": "box",
+            "NODE_BOX_OUTLINE_COLOR": customThemeColor,
+            "DEFAULT_SHADOW_COLOR": "rgba(0,0,0,0)",
+            "DEFAULT_GROUP_FONT": 24,
 
-          "WIDGET_BGCOLOR": "#222",
-          "WIDGET_OUTLINE_COLOR": "#333",
-          "WIDGET_TEXT_COLOR": "#a3a3a8",
-          "WIDGET_SECONDARY_TEXT_COLOR": "#97979c",
+            "WIDGET_BGCOLOR": "#222",
+            "WIDGET_OUTLINE_COLOR": "#333",
+            "WIDGET_TEXT_COLOR": "#a3a3a8",
+            "WIDGET_SECONDARY_TEXT_COLOR": "#97979c",
 
-          "LINK_COLOR": "#9A9",
-          "EVENT_LINK_COLOR": "#A86",
-          "CONNECTING_LINK_COLOR": "#AFA"
-      },
-      "comfy_base": {
-          "fg-color": "#fff",
-          "bg-color": "#202020",
-          "comfy-menu-bg": "rgba(19,19,19,.9)",
-          "comfy-input-bg": "#222222",
-          "input-text": "#ddd",
-          "descrip-text": "#999",
-          "drag-text": "#ccc",
-          "error-text": "#ff4444",
-          "border-color": "#29292c",
-          "tr-even-bg-color": "rgba(22,22,22,.9)",
-          "tr-odd-bg-color": "rgba(19,19,19,.9)"
-      }
-  }
+            "LINK_COLOR": "#9A9",
+            "EVENT_LINK_COLOR": "#A86",
+            "CONNECTING_LINK_COLOR": "#AFA"
+        },
+        "comfy_base": {
+            "fg-color": "#fff",
+            "bg-color": "#202020",
+            "comfy-menu-bg": "rgba(19,19,19,.9)",
+            "comfy-input-bg": "#222222",
+            "input-text": "#ddd",
+            "descrip-text": "#999",
+            "drag-text": "#ccc",
+            "error-text": "#ff4444",
+            "border-color": "#29292c",
+            "tr-even-bg-color": "rgba(22,22,22,.9)",
+            "tr-odd-bg-color": "rgba(19,19,19,.9)"
+        }
+    }
 }
 
 const custom_theme_name = 'custom_obsidian'
 let custom_theme = null
-try{
+try {
     custom_theme = localStorage.getItem('Comfy.Settings.Comfy.CustomColorPalettes') ? JSON.parse(localStorage.getItem('Comfy.Settings.Comfy.CustomColorPalettes')) : {};
 }
-catch (e) {custom_theme = {}}
-try{
+catch (e) { custom_theme = {} }
+try {
     // 修改自定义主题
-    if(!custom_theme || !custom_theme.obsidian || !custom_theme.obsidian.version || custom_theme.obsidian.version<ui.version){
+    if (!custom_theme || !custom_theme.obsidian || !custom_theme.obsidian.version || custom_theme.obsidian.version < ui.version) {
         custom_theme.obsidian = ui
         localStorage.setItem('Comfy.Settings.Comfy.CustomColorPalettes', JSON.stringify(custom_theme));
-        localStorage.setItem('Comfy.Settings.Comfy.ColorPalette',`"${custom_theme_name}"`)
+        localStorage.setItem('Comfy.Settings.Comfy.ColorPalette', `"${custom_theme_name}"`)
     }
     const theme_name = localStorage.getItem('Comfy.Settings.Comfy.ColorPalette')
     // 兼容 ComfyUI Revision: 1887 [235727fe] 以上版本
-    if(api.storeSettings){
+    if (api.storeSettings) {
         const settings = {
             "Comfy.CustomColorPalettes": localStorage.getItem('Comfy.Settings.Comfy.CustomColorPalettes') ? JSON.parse(localStorage.getItem('Comfy.Settings.Comfy.CustomColorPalettes')) : {},
         }
-        if(theme_name == '"custom_obsidian"') settings["Comfy.ColorPalette"] = custom_theme_name
+        if (theme_name == '"custom_obsidian"') settings["Comfy.ColorPalette"] = custom_theme_name
         const _settings = await api.getSettings()
-        if(!_settings || !_settings["Comfy.CustomColorPalettes"] || !_settings["Comfy.CustomColorPalettes"]["obsidian"]){
+        if (!_settings || !_settings["Comfy.CustomColorPalettes"] || !_settings["Comfy.CustomColorPalettes"]["obsidian"]) {
             await api.storeSettings(settings);
             app.ui.settings.load()
         }
     }
     // 判断主题为黑曜石时改变扩展UI
-    if(theme_name == '"custom_obsidian"'){
+    if (theme_name == '"custom_obsidian"') {
         // canvas
         const bgcolor = LGraphCanvas.node_colors.bgcolor;
         LGraphCanvas.node_colors = {
@@ -119,7 +119,7 @@ try{
             brown: { color: "#38291f", bgcolor, groupcolor: "#b06634" },
             green: { color: "#346434", bgcolor, groupcolor: "#8A8" },
             blue: { color: "#1f1f48", bgcolor, groupcolor: "#88A" },
-            pale_blue: {color: "#006691", bgcolor, groupcolor: "#3f789e"},
+            pale_blue: { color: "#006691", bgcolor, groupcolor: "#3f789e" },
             cyan: { color: "#008181", bgcolor, groupcolor: "#8AA" },
             purple: { color: "#422342", bgcolor, groupcolor: "#a1309b" },
             yellow: { color: "#c09430", bgcolor, groupcolor: "#b58b2a" },
@@ -127,7 +127,7 @@ try{
         };
         LiteGraph.NODE_TEXT_SIZE = 13
         LiteGraph.DEFAULT_BACKGROUND_IMAGE = ui.colors.litegraph_base.BACKGROUND_IMAGE
-        LGraphCanvas.prototype.drawNodeShape = function(
+        LGraphCanvas.prototype.drawNodeShape = function (
             node,
             ctx,
             size,
@@ -180,7 +180,7 @@ try{
                         area[1],
                         area[2],
                         area[3],
-                        shape == LiteGraph.CARD_SHAPE ? [this.round_radius,this.round_radius,0,0] : [this.round_radius]
+                        shape == LiteGraph.CARD_SHAPE ? [this.round_radius, this.round_radius, 0, 0] : [this.round_radius]
                     );
                 } else if (shape == LiteGraph.CIRCLE_SHAPE) {
                     ctx.arc(
@@ -197,8 +197,7 @@ try{
                 ctx.fill();
 
                 //separator
-                if(!node.flags.collapsed && render_title)
-                {
+                if (!node.flags.collapsed && render_title) {
                     ctx.shadowColor = "transparent";
                     ctx.fillStyle = "rgba(0,0,0,0.2)";
                     ctx.fillRect(0, -1, area[2], 2);
@@ -207,14 +206,14 @@ try{
             ctx.shadowColor = "transparent";
 
             if (node.onDrawBackground) {
-                node.onDrawBackground(ctx, this, this.canvas, this.graph_mouse );
+                node.onDrawBackground(ctx, this, this.canvas, this.graph_mouse);
             }
 
             //title bg (remember, it is rendered ABOVE the node)
             if (render_title || title_mode == LiteGraph.TRANSPARENT_TITLE) {
                 //title bar
                 if (node.onDrawTitleBar) {
-                    node.onDrawTitleBar( ctx, title_height, size, this.ds.scale, fgcolor );
+                    node.onDrawTitleBar(ctx, title_height, size, this.ds.scale, fgcolor);
                 } else if (
                     title_mode != LiteGraph.TRANSPARENT_TITLE &&
                     (node.constructor.title_color || this.render_title_colored)
@@ -229,7 +228,7 @@ try{
                     if (this.use_gradients) {
                         var grad = LGraphCanvas.gradients[title_color];
                         if (!grad) {
-                            grad = LGraphCanvas.gradients[ title_color ] = ctx.createLinearGradient(0, 0, 400, 0);
+                            grad = LGraphCanvas.gradients[title_color] = ctx.createLinearGradient(0, 0, 400, 0);
                             grad.addColorStop(0, title_color); // TODO refactor: validate color !! prevent DOMException
                             grad.addColorStop(1, "#000");
                         }
@@ -242,13 +241,13 @@ try{
                     ctx.beginPath();
                     if (shape == LiteGraph.BOX_SHAPE || low_quality) {
                         ctx.rect(0, -title_height, size[0] + 1, title_height);
-                    } else if (  shape == LiteGraph.ROUND_SHAPE || shape == LiteGraph.CARD_SHAPE ) {
+                    } else if (shape == LiteGraph.ROUND_SHAPE || shape == LiteGraph.CARD_SHAPE) {
                         ctx.roundRect(
                             0,
                             -title_height,
                             size[0] + 1,
                             title_height,
-                            node.flags.collapsed ? [this.round_radius] : [this.round_radius,this.round_radius,0,0]
+                            node.flags.collapsed ? [this.round_radius] : [this.round_radius, this.round_radius, 0, 0]
                         );
                     }
                     ctx.fill();
@@ -256,12 +255,12 @@ try{
                 }
 
                 var colState = false;
-                if (LiteGraph.node_box_coloured_by_mode){
-                    if(LiteGraph.NODE_MODES_COLORS[node.mode]){
+                if (LiteGraph.node_box_coloured_by_mode) {
+                    if (LiteGraph.NODE_MODES_COLORS[node.mode]) {
                         colState = LiteGraph.NODE_MODES_COLORS[node.mode];
                     }
                 }
-                if (LiteGraph.node_box_coloured_when_on){
+                if (LiteGraph.node_box_coloured_when_on) {
                     colState = node.action_triggered ? "#FFF" : (node.execute_triggered ? "#AAA" : colState);
                 }
 
@@ -290,9 +289,9 @@ try{
                     // BOX_TITLE_ICON
                     ctx.fillStyle = selected ? LiteGraph.NODE_SELECTED_TITLE_COLOR : (node.boxcolor || colState || LiteGraph.NODE_DEFAULT_BOXCOLOR);
                     ctx.beginPath();
-                    ctx.fillRect(10,0-box_size-1,box_size * 1.15,box_size * 0.15);
-                    ctx.fillRect(10,0-box_size*1.5-1,box_size * 1.15,box_size * 0.15);
-                    ctx.fillRect(10,0-box_size*2-1,box_size * 1.15,box_size * 0.15);
+                    ctx.fillRect(10, 0 - box_size - 1, box_size * 1.15, box_size * 0.15);
+                    ctx.fillRect(10, 0 - box_size * 1.5 - 1, box_size * 1.15, box_size * 0.15);
+                    ctx.fillRect(10, 0 - box_size * 2 - 1, box_size * 1.15, box_size * 0.15);
                 } else {
                     if (low_quality) {
                         ctx.fillStyle = "black";
@@ -339,7 +338,7 @@ try{
                             ctx.textAlign = "left";
                             var measure = ctx.measureText(title);
                             ctx.fillText(
-                                title.substr(0,20), //avoid urls too long
+                                title.substr(0, 20), //avoid urls too long
                                 title_height,// + measure.width * 0.5,
                                 LiteGraph.NODE_TITLE_TEXT_Y - title_height
                             );
@@ -359,14 +358,13 @@ try{
                 if (!node.flags.collapsed && node.subgraph && !node.skip_subgraph_button) {
                     var w = LiteGraph.NODE_TITLE_HEIGHT;
                     var x = node.size[0] - w;
-                    var over = LiteGraph.isInsideRectangle( this.graph_mouse[0] - node.pos[0], this.graph_mouse[1] - node.pos[1], x+2, -w+2, w-4, w-4 );
+                    var over = LiteGraph.isInsideRectangle(this.graph_mouse[0] - node.pos[0], this.graph_mouse[1] - node.pos[1], x + 2, -w + 2, w - 4, w - 4);
                     ctx.fillStyle = over ? "#888" : "#555";
-                    if( shape == LiteGraph.BOX_SHAPE || low_quality)
-                        ctx.fillRect(x+2, -w+2, w-4, w-4);
-                    else
-                    {
+                    if (shape == LiteGraph.BOX_SHAPE || low_quality)
+                        ctx.fillRect(x + 2, -w + 2, w - 4, w - 4);
+                    else {
                         ctx.beginPath();
-                        ctx.roundRect(x+2, -w+2, w-4, w-4,[4]);
+                        ctx.roundRect(x + 2, -w + 2, w - 4, w - 4, [4]);
                         ctx.fill();
                     }
                     ctx.fillStyle = "#333";
@@ -422,7 +420,7 @@ try{
                         out_a + area[1],
                         out_b + area[2],
                         out_b + area[3],
-                        [this.round_radius * scale,scale,this.round_radius * scale,scale]
+                        [this.round_radius * scale, scale, this.round_radius * scale, scale]
                     );
                 } else if (shape == LiteGraph.CIRCLE_SHAPE) {
                     ctx.arc(
@@ -440,10 +438,10 @@ try{
             }
 
             // these counter helps in conditioning drawing based on if the node has been executed or an action occurred
-            if (node.execute_triggered>0) node.execute_triggered--;
-            if (node.action_triggered>0) node.action_triggered--;
+            if (node.execute_triggered > 0) node.execute_triggered--;
+            if (node.action_triggered > 0) node.action_triggered--;
         };
-        LGraphCanvas.prototype.drawNodeWidgets = function(
+        LGraphCanvas.prototype.drawNodeWidgets = function (
             node,
             posY,
             ctx,
@@ -476,7 +474,7 @@ try{
                 ctx.fillStyle = "#222";
                 ctx.textAlign = "left";
                 ctx.lineWidth = 1;
-                if(w.disabled)
+                if (w.disabled)
                     ctx.globalAlpha *= 0.5;
                 var widget_width = w.width || width;
 
@@ -492,7 +490,7 @@ try{
                         ctx.beginPath();
                         ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.25]);
                         ctx.fill();
-                        if(show_text && !w.disabled)
+                        if (show_text && !w.disabled)
                             ctx.stroke();
                         if (show_text) {
                             ctx.textAlign = "center";
@@ -509,13 +507,13 @@ try{
                         if (show_text)
                             ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.25]);
                         else
-                            ctx.rect(margin, y, widget_width - margin * 2, H );
+                            ctx.rect(margin, y, widget_width - margin * 2, H);
                         ctx.fill();
-                        if(show_text && !w.disabled)
+                        if (show_text && !w.disabled)
                             ctx.stroke();
                         ctx.fillStyle = w.value ? customThemeColorLight : "#333";
                         ctx.beginPath();
-                        ctx.arc( widget_width - margin * 2, y + H * 0.5, H * 0.25, 0, Math.PI * 2 );
+                        ctx.arc(widget_width - margin * 2, y + H * 0.5, H * 0.25, 0, Math.PI * 2);
                         ctx.fill();
                         if (show_text) {
                             ctx.fillStyle = secondary_text_color;
@@ -540,23 +538,23 @@ try{
                         ctx.fillStyle = background_color;
                         ctx.strokeStyle = outline_color;
                         ctx.beginPath();
-                        ctx.roundRect(margin, y, widget_width - margin * 2, H, [H*0.25]);
+                        ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.25]);
                         ctx.fill();
                         ctx.stroke()
                         var range = w.options.max - w.options.min;
                         var nvalue = (w.value - w.options.min) / range;
-                        if(nvalue < 0.0) nvalue = 0.0;
-                        if(nvalue > 1.0) nvalue = 1.0;
+                        if (nvalue < 0.0) nvalue = 0.0;
+                        if (nvalue > 1.0) nvalue = 1.0;
                         ctx.fillStyle = w.options.hasOwnProperty("slider_color") ? w.options.slider_color : (active_widget == w ? "#333" : customThemeColorLight);
                         ctx.beginPath();
-                        ctx.roundRect(margin, y, nvalue * (widget_width - margin * 2), H, [H*0.25]);
+                        ctx.roundRect(margin, y, nvalue * (widget_width - margin * 2), H, [H * 0.25]);
                         ctx.fill();
                         if (w.marker) {
                             var marker_nvalue = (w.marker - w.options.min) / range;
-                            if(marker_nvalue < 0.0) marker_nvalue = 0.0;
-                            if(marker_nvalue > 1.0) marker_nvalue = 1.0;
+                            if (marker_nvalue < 0.0) marker_nvalue = 0.0;
+                            if (marker_nvalue > 1.0) marker_nvalue = 1.0;
                             ctx.fillStyle = w.options.hasOwnProperty("marker_color") ? w.options.marker_color : "#AA9";
-                            ctx.roundRect( margin + marker_nvalue * (widget_width - margin * 2), y, 2, H , [H * 0.25] );
+                            ctx.roundRect(margin + marker_nvalue * (widget_width - margin * 2), y, 2, H, [H * 0.25]);
                         }
                         if (show_text) {
                             ctx.textAlign = "center";
@@ -576,17 +574,16 @@ try{
                         ctx.strokeStyle = outline_color;
                         ctx.fillStyle = background_color;
                         ctx.beginPath();
-                        if(show_text)
-                            ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.25] );
+                        if (show_text)
+                            ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.25]);
                         else
-                            ctx.rect(margin, y, widget_width - margin * 2, H );
+                            ctx.rect(margin, y, widget_width - margin * 2, H);
                         ctx.fill();
                         if (show_text) {
-                            if(!w.disabled)
+                            if (!w.disabled)
                                 ctx.stroke();
                             ctx.fillStyle = text_color;
-                            if(!w.disabled)
-                            {
+                            if (!w.disabled) {
                                 ctx.beginPath();
                                 ctx.moveTo(margin + 12, y + 6.5);
                                 ctx.lineTo(margin + 6, y + H * 0.5);
@@ -617,13 +614,12 @@ try{
                                 );
                             } else {
                                 var v = w.value;
-                                if( w.options.values )
-                                {
+                                if (w.options.values) {
                                     var values = w.options.values;
-                                    if( values.constructor === Function )
+                                    if (values.constructor === Function)
                                         values = values();
-                                    if(values && values.constructor !== Array)
-                                        v = values[ w.value ];
+                                    if (values && values.constructor !== Array)
+                                        v = values[w.value];
                                 }
                                 ctx.fillText(
                                     v,
@@ -642,10 +638,10 @@ try{
                         if (show_text)
                             ctx.roundRect(margin, y, widget_width - margin * 2, H, [H * 0.25]);
                         else
-                            ctx.rect( margin, y, widget_width - margin * 2, H );
+                            ctx.rect(margin, y, widget_width - margin * 2, H);
                         ctx.fill();
                         if (show_text) {
-                            if(!w.disabled)
+                            if (!w.disabled)
                                 ctx.stroke();
                             ctx.save();
                             ctx.beginPath();
@@ -661,7 +657,7 @@ try{
                             }
                             ctx.fillStyle = text_color;
                             ctx.textAlign = "right";
-                            ctx.fillText(String(w.value).substr(0,30), widget_width - margin * 2, y + H * 0.7); //30 chars max
+                            ctx.fillText(String(w.value).substr(0, 30), widget_width - margin * 2, y + H * 0.7); //30 chars max
                             ctx.restore();
                         }
                         break;
@@ -794,28 +790,28 @@ try{
         styleElement.innerHTML = cssCode
         document.head.appendChild(styleElement);
     }
-}catch(e){
+} catch (e) {
     console.error(e)
 }
 
 // 节点颜色
 const COLOR_THEMES = LGraphCanvas.node_colors
 const NODE_COLORS = {
-    "easy positive":"green",
-    "easy negative":"red",
-    "easy XYInputs: Seeds++ Batch": customXYLink,
-    "easy XYInputs: ModelMergeBlocks": customXYLink,
+    "Fooocus positive": "green",
+    "Fooocus negative": "red",
+    // "easy XYInputs: Seeds++ Batch": customXYLink,
+    // "easy XYInputs: ModelMergeBlocks": customXYLink,
 }
 
 function setNodeColors(node, theme) {
-    if (!theme) {return;}
-    if(theme.color) node.color = theme.color;
-    if(theme.bgcolor) node.bgcolor = theme.bgcolor;
+    if (!theme) { return; }
+    if (theme.color) node.color = theme.color;
+    if (theme.bgcolor) node.bgcolor = theme.bgcolor;
 }
 
 
 app.registerExtension({
-    name: "comfy.easyUse.interface",
+    name: "comfy.fooocus.interface",
     setup() {
         Object.assign(app.canvas.default_connection_color_byType, customLinkColors);
         Object.assign(LGraphCanvas.link_type_colors, customLinkColors);
