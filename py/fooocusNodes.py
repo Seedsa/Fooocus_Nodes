@@ -678,7 +678,6 @@ class FooocusImagePrompt:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
                 "ip_type":(config.ip_list, {"default": config.default_ip}, ),
                 "ip_stop": ("FLOAT", {"default": config.default_parameters[config.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
@@ -687,14 +686,14 @@ class FooocusImagePrompt:
             },
         }
 
-    RETURN_TYPES = ("PIPE_LINE", "IMAGE")
-    RETURN_NAMES = ("pipe", "image")
+    RETURN_TYPES = ("IMAGE_PROMPT",)
+    RETURN_NAMES = ("image_prompt",)
     OUTPUT_NODE = True
-    FUNCTION = "apply_image_prompt"
+    FUNCTION = "image_prompt"
     CATEGORY = "Fooocus"
 
-    def apply_image_prompt(
-        self, pipe, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
+    def image_prompt(
+        self, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
     ):
         if ip_type == config.cn_ip:
           clip_vision_path, ip_negative_path, ip_adapter_path = config.downloading_ip_adapters('ip')
@@ -715,14 +714,42 @@ class FooocusImagePrompt:
           image = resize_image(image, width=224, height=224, resize_mode=0)
           task = [image,ip_stop,ip_weight]
           task[0] = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_face_path)
-        pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, [task])
-        pipe.update(
-            {
-                "model": pipeline.final_unet,
-            }
-        )
-        new_pipe = pipe.copy()
-        return (new_pipe, image,)
+        # work_model = model.clone()
+        # new_model = ip_adapter.patch_model(work_model, [task])
+        # return (new_model, )
+        return (task, )
+
+class FooocusApplyImagePrompt:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+            },
+            "optional": {
+                "image_prompt_a": ("IMAGE_PROMPT",),
+                "image_prompt_b": ("IMAGE_PROMPT",),
+                "image_prompt_c": ("IMAGE_PROMPT",),
+                "image_prompt_d": ("IMAGE_PROMPT",),
+            },
+        }
+    RETURN_TYPES = ("MODEL",)
+    RETURN_NAMES = ("model",)
+    OUTPUT_NODE = True
+    FUNCTION = "apply_image_prompt"
+    CATEGORY = "Fooocus"
+
+    def apply_image_prompt(
+        self, model, image_prompt_a=None, image_prompt_b=None, image_prompt_c=None, image_prompt_d=None
+    ):
+        image_prompt_tasks = []
+        if image_prompt_a:
+            image_prompt_tasks.append(image_prompt_a)
+        if image_prompt_b:
+            image_prompt_tasks.append(image_prompt_b)
+        work_model = model.clone()
+        new_model = ip_adapter.patch_model(work_model, image_prompt_tasks)
+        return (new_model, )
 
 NODE_CLASS_MAPPINGS = {
 
@@ -732,7 +759,9 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Hirefix": FooocusHirefix,
     "Fooocus LoraStack": FooocusLoraStack,
     "Fooocus Controlnet": FooocusControlnet,
-    "Fooocus ImagePrompt": FooocusImagePrompt
+    "Fooocus ImagePrompt": FooocusImagePrompt,
+    "Fooocus ApplyImagePrompt": FooocusApplyImagePrompt,
+
 
 }
 
