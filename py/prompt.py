@@ -4,13 +4,16 @@ from pathlib import Path
 
 
 
+script_directory = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+styles_dir = os.path.join(script_directory, "styles")
+
 # 风格提示词选择器
 class stylesPromptSelector:
     @classmethod
     def INPUT_TYPES(s):
         styles = ["fooocus_styles"]
-        for file_name in os.listdir(os.path.join(__file__, "../../styles")):
-            file = os.path.join(__file__, "../../styles", file_name)
+        for file_name in os.listdir(script_directory):
+            file = os.path.join(styles_dir, file_name)
             if (
                 os.path.isfile(file)
                 and file_name.endswith(".json")
