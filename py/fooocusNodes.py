@@ -12,6 +12,7 @@ import fooocus_modules.core as core
 from extras.expansion import FooocusExpansion
 from extras.expansion import safe_str
 import extras.preprocessors as preprocessors
+from fooocus import get_local_filepath
 from nodes import SaveImage, PreviewImage
 from fooocus_modules.util import (
     remove_empty_str,
@@ -26,7 +27,6 @@ from fooocus_modules.util import (
 from fooocus_modules.upscaler import perform_upscale
 import fooocus_modules.inpaint_worker as inpaint_worker
 import fooocus_modules.patch
-from fooocus_modules.config import inpaint_head_model_path, inpaint_patch_model_path
 from typing import   Tuple
 
 import comfy.samplers
@@ -197,6 +197,7 @@ class FooocusPreKSampler:
                 "adm_scaler_end": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.1},),
                 "controlnet_softness": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01},),
                 "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
+                "inpaint_engine":(list(config.FOOOCUS_INPAINT_PATCH.keys()),),
                 "top": ("BOOLEAN", {"default": False}),
                 "bottom": ("BOOLEAN", {"default": False}),
                 "left": ("BOOLEAN", {"default": False}),
@@ -214,7 +215,7 @@ class FooocusPreKSampler:
     FUNCTION = "fooocus_preKSampler"
     CATEGORY = "Fooocus"
 
-    def fooocus_preKSampler(self, pipe: dict, inpaint_image=None, inpaint_mask=None, **kwargs):
+    def fooocus_preKSampler(self, pipe: dict, inpaint_image=None, inpaint_mask=None,inpaint_engine=None, **kwargs):
         # 检查pipe非空
         assert pipe is not None, "请先调用 FooocusLoader 进行初始化！"
         pipe.update(
@@ -258,7 +259,9 @@ class FooocusPreKSampler:
             pipe["right"] = False
 
         if (pipe["generation_mode"] == "inpaint" or pipe["generation_mode"] == "outpaint"):
-            base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+            head_file = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
+            patch_file = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
+            base_model_additional_loras += [(patch_file, 1.0)]
             if pipe["refiner_model_name"] == "None":
                 use_synthetic_refiner = True
                 refiner_switch = 0.5
@@ -302,7 +305,6 @@ class FooocusPreKSampler:
         else:
             inpaint_image = inpaint_image[0].numpy()
             inpaint_image = (inpaint_image * 255).astype(np.uint8)
-
             if pipe["top"] or pipe["bottom"] or pipe["left"] or pipe["right"]:
                 print("启用扩图！")
                 inpaint_mask = np.zeros(inpaint_image.shape, dtype=np.uint8)
@@ -402,7 +404,7 @@ class FooocusPreKSampler:
                 latent_swap=latent_swap,
             )
             pipeline.final_unet = inpaint_worker.current_task.patch(
-                inpaint_head_model_path=inpaint_head_model_path,
+                inpaint_head_model_path=head_file,
                 inpaint_latent=latent_inpaint,
                 inpaint_latent_mask=latent_mask,
                 model=pipeline.final_unet,
