@@ -702,7 +702,8 @@ class FooocusImagePrompt:
           image = image[0].numpy()
           image = (image * 255).astype(np.uint8)
           image = resize_image(HWC3(image), width=224, height=224, resize_mode=0)
-          preprocess_image = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_path)
+          task = [image,ip_stop,ip_weight]
+          task[0] = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_path)
         if ip_type == config.cn_ip_face:
           clip_vision_path, ip_negative_path,  ip_adapter_face_path = config.downloading_ip_adapters('face')
           ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
@@ -712,8 +713,9 @@ class FooocusImagePrompt:
           if not skip_cn_preprocess:
             image = face_crop.crop_image(image)
           image = resize_image(image, width=224, height=224, resize_mode=0)
-          preprocess_image = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_face_path)
-        pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, [preprocess_image,ip_stop,ip_weight])
+          task = [image,ip_stop,ip_weight]
+          task[0] = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_face_path)
+        pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, [task])
         pipe.update(
             {
                 "model": pipeline.final_unet,
