@@ -672,6 +672,44 @@ class FooocusControlnet:
         new_pipe["cn_negative"] = negative_cond
         return (new_pipe, image,)
 
+class FooocusImagePrompt:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "pipe": ("PIPE_LINE",),
+                "image": ("IMAGE",),
+                "ip_type":(config.ip_list, {"default": config.default_ip}, ),
+                "ip_stop": ("FLOAT", {"default": config.default_parameters[config.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
+                "ip_weight": ("FLOAT", {"default": config.default_parameters[config.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+            },
+        }
+
+    RETURN_TYPES = ("PIPE_LINE", "IMAGE")
+    RETURN_NAMES = ("pipe", "image")
+    OUTPUT_NODE = True
+    FUNCTION = "apply_image_prompt"
+    CATEGORY = "Fooocus"
+
+    def apply_image_prompt(
+        self, pipe, image, ip_type, ip_stop, ip_weight
+    ):
+        if ip_type == config.cn_ip:
+          clip_vision_path, ip_negative_path, ip_adapter_path = config.downloading_ip_adapters('ip')
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = resize_image(HWC3(image), width=224, height=224, resize_mode=0)
+          ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
+          task = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_path)
+        pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, [task])
+        pipe.update(
+            {
+                "model": pipeline.final_unet,
+            }
+        )
+        new_pipe = pipe.copy()
+        return (new_pipe, image,)
+
 NODE_CLASS_MAPPINGS = {
 
     "Fooocus Loader": FooocusLoader,
@@ -680,6 +718,8 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Hirefix": FooocusHirefix,
     "Fooocus LoraStack": FooocusLoraStack,
     "Fooocus Controlnet": FooocusControlnet,
+    "Fooocus ImagePrompt": FooocusImagePrompt
+
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
