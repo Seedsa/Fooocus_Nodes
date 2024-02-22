@@ -29,6 +29,7 @@ BASE_RESOLUTIONS = [
 ]
 
 INPAINT_DIR = os.path.join(folder_paths.models_dir, "inpaint")
+CONTROLNET_DIR = os.path.join(folder_paths.models_dir, "controlnet")
 RESOURCES_DIR = os.path.join(Path(__file__).parent.parent.parent, "resources")
 FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "styles")
 
@@ -48,6 +49,14 @@ FOOOCUS_INPAINT_PATCH = {
     "v1": {
         "model_url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint.fooocus.patch"
     },
+}
+FOOOCUS_IMAGE_PROMPT = {
+  "PyraCanny":{
+    "model_url":"https://huggingface.co/lllyasviel/misc/resolve/main/control-lora-canny-rank128.safetensors"
+  },
+  "CPDS":{
+    "model_url":"https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_xl_cpds_128.safetensors"
+  }
 }
 
 controlnet_softness=0.25

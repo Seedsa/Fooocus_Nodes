@@ -9,9 +9,11 @@ from comfy.samplers import *
 import fooocus_modules.config as config
 import fooocus_modules.default_pipeline as pipeline
 import fooocus_modules.core as core
+import fooocus_modules.flags as flags
 from extras.expansion import FooocusExpansion
 from extras.expansion import safe_str
 import extras.preprocessors as preprocessors
+import extras.ip_adapter as ip_adapter
 from fooocus import get_local_filepath
 from nodes import SaveImage, PreviewImage
 from fooocus_modules.util import (
@@ -666,6 +668,63 @@ class FooocusControlnet:
         new_pipe["cn_negative"] = negative_cond
         return (new_pipe, image,)
 
+class FooocusImagePrompt:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "pipe": ("PIPE_LINE",),
+                "image": ("IMAGE",),
+                "ip_type":(flags.ip_list, {"default": flags.default_ip}, ),
+                "ip_stop": ("FLOAT", {"default": flags.default_parameters[flags.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
+                "ip_weight": ("FLOAT", {"default": flags.default_parameters[flags.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+                "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
+            },
+        }
+
+    RETURN_TYPES = ("PIPE_LINE", "IMAGE")
+    RETURN_NAMES = ("pipe", "image")
+    OUTPUT_NODE = True
+    FUNCTION = "apply_controlnet"
+    CATEGORY = "Fooocus"
+
+    def apply_controlnet(
+        self, pipe, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
+    ):
+        if ip_type == flags.cn_canny:
+          cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[flags.cn_canny]["model_url"],config.CONTROLNET_DIR)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = resize_image(HWC3(image), pipe["width"], pipe["height"])
+          if not skip_cn_preprocess:
+            image = preprocessors.canny_pyramid(image)
+          image = HWC3(image)
+          image = core.numpy_to_pytorch(image)
+        if ip_type == flags.cn_cpds:
+          cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[flags.cn_cpds]["model_url"],config.CONTROLNET_DIR)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = resize_image(HWC3(image), pipe["width"], pipe["height"])
+          if not skip_cn_preprocess:
+            image = preprocessors.cpds(image)
+          image = HWC3(image)
+          image = core.numpy_to_pytorch(image)
+
+        positive_cond, negative_cond = core.apply_controlnet(
+            pipe["positive"],
+            pipe["negative"],
+            core.load_controlnet(cn_path),
+            image,
+            ip_weight,
+            0,
+            ip_stop,
+        )
+        new_pipe = pipe.copy()
+        new_pipe["use_cn"] = True
+        new_pipe["cn_positive"] = positive_cond
+        new_pipe["cn_negative"] = negative_cond
+        return (new_pipe, image,)
+
 
 NODE_CLASS_MAPPINGS = {
 
@@ -675,6 +734,8 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Hirefix": FooocusHirefix,
     "Fooocus LoraStack": FooocusLoraStack,
     "Fooocus Controlnet": FooocusControlnet,
+    "Fooocus ImagePrompt": FooocusImagePrompt
+
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {

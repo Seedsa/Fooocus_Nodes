@@ -71,6 +71,6 @@ def _log_node(color, node_name, message=None, prefix=''):
   print(_get_log_msg(color, node_name, message, prefix=prefix))
 
 def _get_log_msg(color, node_name, message=None, prefix=''):
-  msg = f'{COLORS_STYLE["BOLD"]}{color}{prefix}[EasyUse] {node_name.replace(" (EasyUse)", "")}'
+  msg = f'{COLORS_STYLE["BOLD"]}{color}{prefix}[Fooocus] {node_name.replace(" (Fooocus)", "")}'
   msg += f':{COLORS_STYLE["RESET"]} {message}' if message is not None else f'{COLORS_STYLE["RESET"]}'
   return msg
