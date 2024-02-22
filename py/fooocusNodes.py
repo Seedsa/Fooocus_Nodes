@@ -12,6 +12,7 @@ import fooocus_modules.core as core
 import fooocus_modules.flags as flags
 from extras.expansion import FooocusExpansion
 from extras.expansion import safe_str
+import extras.face_crop as face_crop
 import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
 from fooocus import get_local_filepath
@@ -682,6 +683,7 @@ class FooocusImagePrompt:
                 "ip_type":(config.ip_list, {"default": config.default_ip}, ),
                 "ip_stop": ("FLOAT", {"default": config.default_parameters[config.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
                 "ip_weight": ("FLOAT", {"default": config.default_parameters[config.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+                "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
             },
         }
 
@@ -692,16 +694,26 @@ class FooocusImagePrompt:
     CATEGORY = "Fooocus"
 
     def apply_image_prompt(
-        self, pipe, image, ip_type, ip_stop, ip_weight
+        self, pipe, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
     ):
         if ip_type == config.cn_ip:
           clip_vision_path, ip_negative_path, ip_adapter_path = config.downloading_ip_adapters('ip')
+          ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
           image = image[0].numpy()
           image = (image * 255).astype(np.uint8)
           image = resize_image(HWC3(image), width=224, height=224, resize_mode=0)
-          ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
-          task = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_path)
-        pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, [task])
+          preprocess_image = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_path)
+        if ip_type == config.cn_ip_face:
+          clip_vision_path, ip_negative_path,  ip_adapter_face_path = config.downloading_ip_adapters('face')
+          ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = HWC3(image)
+          if not skip_cn_preprocess:
+            image = face_crop.crop_image(image)
+          image = resize_image(image, width=224, height=224, resize_mode=0)
+          preprocess_image = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_face_path)
+        pipeline.final_unet = ip_adapter.patch_model(pipeline.final_unet, [preprocess_image,ip_stop,ip_weight])
         pipe.update(
             {
                 "model": pipeline.final_unet,
