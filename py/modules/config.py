@@ -61,3 +61,4 @@ FOOOCUS_IMAGE_PROMPT = {
 
 controlnet_softness=0.25
 path_fooocus_expansion = folder_paths.models_dir+"/prompt_expansion/fooocus_expansion"
+path_loras=folder_paths.get_folder_paths('loras')[0]
