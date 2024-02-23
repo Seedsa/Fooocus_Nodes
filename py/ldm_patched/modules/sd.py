@@ -1,9 +1,6 @@
 import torch
-import contextlib
-import math
 
-from comfy import model_management
-from ldm_patched.ldm.util import instantiate_from_config
+from ldm_patched.modules import model_management
 from ldm_patched.ldm.models.autoencoder import AutoencoderKL, AutoencodingEngine
 import yaml
 
@@ -36,7 +33,7 @@ def load_model_weights(model, sd):
             w = sd.pop(x)
             del w
     if len(m) > 0:
-        print("额外的", m)
+        print("extra", m)
     return model
 
 def load_clip_weights(model, sd):
@@ -157,6 +154,8 @@ class VAE:
 
         self.memory_used_encode = lambda shape, dtype: (1767 * shape[2] * shape[3]) * model_management.dtype_size(dtype) #These are for AutoencoderKL and need tweaking (should be lower)
         self.memory_used_decode = lambda shape, dtype: (2178 * shape[2] * shape[3] * 64) * model_management.dtype_size(dtype)
+        self.downscale_ratio = 8
+        self.latent_channels = 4
 
         if config is None:
             if "decoder.mid.block_1.mix_factor" in sd:
@@ -172,6 +171,11 @@ class VAE:
             else:
                 #default SD1.x/SD2.x VAE parameters
                 ddconfig = {'double_z': True, 'z_channels': 4, 'resolution': 256, 'in_channels': 3, 'out_ch': 3, 'ch': 128, 'ch_mult': [1, 2, 4, 4], 'num_res_blocks': 2, 'attn_resolutions': [], 'dropout': 0.0}
+
+                if 'encoder.down.2.downsample.conv.weight' not in sd: #Stable diffusion x4 upscaler VAE
+                    ddconfig['ch_mult'] = [1, 2, 4]
+                    self.downscale_ratio = 4
+
                 self.first_stage_model = AutoencoderKL(ddconfig=ddconfig, embed_dim=4)
         else:
             self.first_stage_model = AutoencoderKL(**(config['params']))
@@ -179,10 +183,10 @@ class VAE:
 
         m, u = self.first_stage_model.load_state_dict(sd, strict=False)
         if len(m) > 0:
-            print("丢失 VAE keys", m)
+            print("Missing VAE keys", m)
 
         if len(u) > 0:
-            print("剩余 VAE keys", u)
+            print("Leftover VAE keys", u)
 
         if device is None:
             device = model_management.vae_device()
@@ -204,9 +208,9 @@ class VAE:
 
         decode_fn = lambda a: (self.first_stage_model.decode(a.to(self.vae_dtype).to(self.device)) + 1.0).float()
         output = torch.clamp((
-            (ldm_patched.modules.utils.tiled_scale(samples, decode_fn, tile_x // 2, tile_y * 2, overlap, upscale_amount = 8, output_device=self.output_device, pbar = pbar) +
-            ldm_patched.modules.utils.tiled_scale(samples, decode_fn, tile_x * 2, tile_y // 2, overlap, upscale_amount = 8, output_device=self.output_device, pbar = pbar) +
-             ldm_patched.modules.utils.tiled_scale(samples, decode_fn, tile_x, tile_y, overlap, upscale_amount = 8, output_device=self.output_device, pbar = pbar))
+            (ldm_patched.modules.utils.tiled_scale(samples, decode_fn, tile_x // 2, tile_y * 2, overlap, upscale_amount = self.downscale_ratio, output_device=self.output_device, pbar = pbar) +
+            ldm_patched.modules.utils.tiled_scale(samples, decode_fn, tile_x * 2, tile_y // 2, overlap, upscale_amount = self.downscale_ratio, output_device=self.output_device, pbar = pbar) +
+             ldm_patched.modules.utils.tiled_scale(samples, decode_fn, tile_x, tile_y, overlap, upscale_amount = self.downscale_ratio, output_device=self.output_device, pbar = pbar))
             / 3.0) / 2.0, min=0.0, max=1.0)
         return output
 
@@ -217,9 +221,9 @@ class VAE:
         pbar = ldm_patched.modules.utils.ProgressBar(steps)
 
         encode_fn = lambda a: self.first_stage_model.encode((2. * a - 1.).to(self.vae_dtype).to(self.device)).float()
-        samples = ldm_patched.modules.utils.tiled_scale(pixel_samples, encode_fn, tile_x, tile_y, overlap, upscale_amount = (1/8), out_channels=4, output_device=self.output_device, pbar=pbar)
-        samples += ldm_patched.modules.utils.tiled_scale(pixel_samples, encode_fn, tile_x * 2, tile_y // 2, overlap, upscale_amount = (1/8), out_channels=4, output_device=self.output_device, pbar=pbar)
-        samples += ldm_patched.modules.utils.tiled_scale(pixel_samples, encode_fn, tile_x // 2, tile_y * 2, overlap, upscale_amount = (1/8), out_channels=4, output_device=self.output_device, pbar=pbar)
+        samples = ldm_patched.modules.utils.tiled_scale(pixel_samples, encode_fn, tile_x, tile_y, overlap, upscale_amount = (1/self.downscale_ratio), out_channels=self.latent_channels, output_device=self.output_device, pbar=pbar)
+        samples += ldm_patched.modules.utils.tiled_scale(pixel_samples, encode_fn, tile_x * 2, tile_y // 2, overlap, upscale_amount = (1/self.downscale_ratio), out_channels=self.latent_channels, output_device=self.output_device, pbar=pbar)
+        samples += ldm_patched.modules.utils.tiled_scale(pixel_samples, encode_fn, tile_x // 2, tile_y * 2, overlap, upscale_amount = (1/self.downscale_ratio), out_channels=self.latent_channels, output_device=self.output_device, pbar=pbar)
         samples /= 3.0
         return samples
 
@@ -231,12 +235,12 @@ class VAE:
             batch_number = int(free_memory / memory_used)
             batch_number = max(1, batch_number)
 
-            pixel_samples = torch.empty((samples_in.shape[0], 3, round(samples_in.shape[2] * 8), round(samples_in.shape[3] * 8)), device=self.output_device)
+            pixel_samples = torch.empty((samples_in.shape[0], 3, round(samples_in.shape[2] * self.downscale_ratio), round(samples_in.shape[3] * self.downscale_ratio)), device=self.output_device)
             for x in range(0, samples_in.shape[0], batch_number):
                 samples = samples_in[x:x+batch_number].to(self.vae_dtype).to(self.device)
                 pixel_samples[x:x+batch_number] = torch.clamp((self.first_stage_model.decode(samples).to(self.output_device).float() + 1.0) / 2.0, min=0.0, max=1.0)
         except model_management.OOM_EXCEPTION as e:
-            print("在常规VAE解码时内存不足，正在尝试使用分块VAE解码重试。")
+            print("Warning: Ran out of memory when regular VAE decoding, retrying with tiled VAE decoding.")
             pixel_samples = self.decode_tiled_(samples_in)
 
         pixel_samples = pixel_samples.to(self.output_device).movedim(1,-1)
@@ -255,13 +259,13 @@ class VAE:
             free_memory = model_management.get_free_memory(self.device)
             batch_number = int(free_memory / memory_used)
             batch_number = max(1, batch_number)
-            samples = torch.empty((pixel_samples.shape[0], 4, round(pixel_samples.shape[2] // 8), round(pixel_samples.shape[3] // 8)), device=self.output_device)
+            samples = torch.empty((pixel_samples.shape[0], self.latent_channels, round(pixel_samples.shape[2] // self.downscale_ratio), round(pixel_samples.shape[3] // self.downscale_ratio)), device=self.output_device)
             for x in range(0, pixel_samples.shape[0], batch_number):
                 pixels_in = (2. * pixel_samples[x:x+batch_number] - 1.).to(self.vae_dtype).to(self.device)
                 samples[x:x+batch_number] = self.first_stage_model.encode(pixels_in).to(self.output_device).float()
 
         except model_management.OOM_EXCEPTION as e:
-            print("警告：在常规VAE编码时内存不足，正在尝试使用分块VAE编码重试。")
+            print("Warning: Ran out of memory when regular VAE encoding, retrying with tiled VAE encoding.")
             samples = self.encode_tiled_(pixel_samples)
 
         return samples
@@ -289,7 +293,7 @@ def load_style_model(ckpt_path):
     if "style_embedding" in keys:
         model = ldm_patched.t2ia.adapter.StyleAdapter(width=1024, context_dim=768, num_head=8, n_layes=3, num_token=8)
     else:
-        raise Exception("无效的样式模型 {}".format(ckpt_path))
+        raise Exception("invalid style model {}".format(ckpt_path))
     model.load_state_dict(model_data)
     return StyleModel(model)
 
@@ -326,10 +330,10 @@ def load_clip(ckpt_paths, embedding_directory=None):
     for c in clip_data:
         m, u = clip.load_sd(c)
         if len(m) > 0:
-            print("clip 丢失:", m)
+            print("clip missing:", m)
 
         if len(u) > 0:
-            print("clip 意外:", u)
+            print("clip unexpected:", u)
     return clip
 
 def load_gligen(ckpt_path):
@@ -445,7 +449,7 @@ def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, o
     model_config.set_manual_cast(manual_cast_dtype)
 
     if model_config is None:
-        raise RuntimeError("错误：无法检测到以下模型类型: {}".format(ckpt_path))
+        raise RuntimeError("ERROR: Could not detect model type of: {}".format(ckpt_path))
 
     if model_config.clip_vision_prefix is not None:
         if output_clipvision:
@@ -473,12 +477,12 @@ def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, o
 
     left_over = sd.keys()
     if len(left_over) > 0:
-        print("剩余的 keys:", left_over)
+        print("left over keys:", left_over)
 
     if output_model:
         model_patcher = ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=load_device, offload_device=model_management.unet_offload_device(), current_device=inital_load_device)
         if inital_load_device != torch.device("cpu"):
-            print("直接加载到 GPU")
+            print("loaded straight to GPU")
             model_management.load_model_gpu(model_patcher)
 
     return (model_patcher, clip, vae, clipvision)
@@ -516,18 +520,25 @@ def load_unet_state_dict(sd): #load unet in diffusers format
     model.load_model_weights(new_sd, "")
     left_over = sd.keys()
     if len(left_over) > 0:
-        print("未使用的keys在UNET中:", left_over)
+        print("left over keys in unet:", left_over)
     return ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=load_device, offload_device=offload_device)
 
 def load_unet(unet_path):
     sd = ldm_patched.modules.utils.load_torch_file(unet_path)
     model = load_unet_state_dict(sd)
     if model is None:
-        print("错误：不支持的UNET", unet_path)
-        raise RuntimeError("错误：无法检测到的模型类型: {}".format(unet_path))
+        print("ERROR UNSUPPORTED UNET", unet_path)
+        raise RuntimeError("ERROR: Could not detect model type of: {}".format(unet_path))
     return model
 
-def save_checkpoint(output_path, model, clip, vae, metadata=None):
-    model_management.load_models_gpu([model, clip.load_model()])
-    sd = model.model.state_dict_for_saving(clip.get_sd(), vae.get_sd())
+def save_checkpoint(output_path, model, clip=None, vae=None, clip_vision=None, metadata=None):
+    clip_sd = None
+    load_models = [model]
+    if clip is not None:
+        load_models.append(clip.load_model())
+        clip_sd = clip.get_sd()
+
+    model_management.load_models_gpu(load_models)
+    clip_vision_sd = clip_vision.get_sd() if clip_vision is not None else None
+    sd = model.model.state_dict_for_saving(clip_sd, vae.get_sd(), clip_vision_sd)
     ldm_patched.modules.utils.save_torch_file(sd, output_path, metadata=metadata)

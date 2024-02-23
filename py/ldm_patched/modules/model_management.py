@@ -41,7 +41,7 @@ if args.directml is not None:
         directml_device = torch_directml.device()
     else:
         directml_device = torch_directml.device(device_index)
-    print("使用 DirectML 指定设备:", torch_directml.device_name(device_index))
+    print("Using directml with device:", torch_directml.device_name(device_index))
     # torch_directml.disable_tiled_resources(True)
     lowvram_available = False #TODO: need to find a way to get free memory in directml before this can be enabled by default.
 
@@ -117,10 +117,10 @@ def get_total_memory(dev=None, torch_total_too=False):
 
 total_vram = get_total_memory(get_torch_device()) / (1024 * 1024)
 total_ram = psutil.virtual_memory().total / (1024 * 1024)
-print("总显存 {:0.0f} MB, 总内存 {:0.0f} MB".format(total_vram, total_ram))
+print("Total VRAM {:0.0f} MB, total RAM {:0.0f} MB".format(total_vram, total_ram))
 if not args.always_normal_vram and not args.always_cpu:
     if lowvram_available and total_vram <= 4096:
-        print("尝试启用低显存模式，因为您的显存似乎只有 4GB 或更少。如果您不想用此模式，请在启动器中加入: --always-normal-vram")
+        print("Trying to enable lowvram mode because your GPU seems to have 4GB or less. If you don't want this use: --always-normal-vram")
         set_vram_to = VRAMState.LOW_VRAM
 
 try:
@@ -143,11 +143,11 @@ else:
             pass
         try:
             XFORMERS_VERSION = xformers.version.__version__
-            print("xformers 版本:", XFORMERS_VERSION)
+            print("xformers version:", XFORMERS_VERSION)
             if XFORMERS_VERSION.startswith("0.0.18"):
                 print()
-                print("警告：这个版本的 xformers 存在一个重大错误，在生成高分辨率图像时会出现全黑的图像。")
-                print("请将 xformers 降级或升级到其他版本。")
+                print("WARNING: This version of xformers has a major bug where you will get black images when generating high resolution images.")
+                print("Please downgrade or upgrade xformers to a different version.")
                 print()
                 XFORMERS_ENABLED_VAE = False
         except:
@@ -175,7 +175,7 @@ try:
         if int(torch_version[0]) >= 2:
             if ENABLE_PYTORCH_ATTENTION == False and args.attention_split == False and args.attention_quad == False:
                 ENABLE_PYTORCH_ATTENTION = True
-            if torch.cuda.is_bf16_supported():
+            if torch.cuda.is_bf16_supported() and torch.cuda.get_device_properties(torch.cuda.current_device()).major >= 8:
                 VAE_DTYPE = torch.bfloat16
     if is_intel_xpu():
         if args.attention_split == False and args.attention_quad == False:
@@ -213,11 +213,11 @@ elif args.always_high_vram or args.always_gpu:
 FORCE_FP32 = False
 FORCE_FP16 = False
 if args.all_in_fp32:
-    print("强制使用 FP32，如果这样做有所改善，请报告。")
+    print("Forcing FP32, if this improves things please report it.")
     FORCE_FP32 = True
 
 if args.all_in_fp16:
-    print("强制使用 FP16.")
+    print("Forcing FP16.")
     FORCE_FP16 = True
 
 if lowvram_available:
@@ -231,12 +231,12 @@ if cpu_state != CPUState.GPU:
 if cpu_state == CPUState.MPS:
     vram_state = VRAMState.SHARED
 
-print(f"将显存状态设置为: {vram_state.name}")
+print(f"Set vram state to: {vram_state.name}")
 
 ALWAYS_VRAM_OFFLOAD = args.always_offload_from_vram
 
 if ALWAYS_VRAM_OFFLOAD:
-    print("禁用智能内存管理")
+    print("Always offload VRAM")
 
 def get_torch_device_name(device):
     if hasattr(device, 'type'):
@@ -254,11 +254,11 @@ def get_torch_device_name(device):
         return "CUDA {}: {}".format(device, torch.cuda.get_device_name(device))
 
 try:
-    print("设备:", get_torch_device_name(get_torch_device()))
+    print("Device:", get_torch_device_name(get_torch_device()))
 except:
-    print("无法选择默认设备。")
+    print("Could not pick default device.")
 
-print("VAE 数据类型:", VAE_DTYPE)
+print("VAE dtype:", VAE_DTYPE)
 
 current_loaded_models = []
 
@@ -301,7 +301,7 @@ class LoadedModel:
             raise e
 
         if lowvram_model_memory > 0:
-            print("以低显存模式加载中", lowvram_model_memory/(1024 * 1024))
+            print("loading in lowvram mode", lowvram_model_memory/(1024 * 1024))
             mem_counter = 0
             for m in self.real_model.modules():
                 if hasattr(m, "ldm_patched_cast_weights"):
@@ -348,7 +348,7 @@ def unload_model_clones(model):
             to_unload = [i] + to_unload
 
     for i in to_unload:
-        print("卸载克隆", i)
+        print("unload clone", i)
         current_loaded_models.pop(i).model_unload()
 
 def free_memory(memory_required, device, keep_loaded=[]):
@@ -390,7 +390,7 @@ def load_models_gpu(models, memory_required=0):
             models_already_loaded.append(loaded_model)
         else:
             if hasattr(x, "model"):
-                print(f"请求加载 {x.model.__class__.__name__}")
+                print(f"Requested to load {x.model.__class__.__name__}")
             models_to_load.append(loaded_model)
 
     if len(models_to_load) == 0:
@@ -400,7 +400,7 @@ def load_models_gpu(models, memory_required=0):
                 free_memory(extra_mem, d, models_already_loaded)
         return
 
-    print(f"正在载入 {len(models_to_load)} 个新模型{'s' if len(models_to_load) > 1 else ''}")
+    print(f"Loading {len(models_to_load)} new model{'s' if len(models_to_load) > 1 else ''}")
 
     total_memory_required = {}
     for loaded_model in models_to_load:
@@ -505,7 +505,7 @@ def unet_manual_cast(weight_dtype, inference_device):
     if weight_dtype == torch.float32:
         return None
 
-    fp16_supported = comfy.model_management.should_use_fp16(inference_device, prioritize_performance=False)
+    fp16_supported = ldm_patched.modules.model_management.should_use_fp16(inference_device, prioritize_performance=False)
     if fp16_supported and weight_dtype == torch.float16:
         return None
 

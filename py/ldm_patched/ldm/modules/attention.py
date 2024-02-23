@@ -1,17 +1,14 @@
-from inspect import isfunction
 import math
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
 from einops import rearrange, repeat
 from typing import Optional, Any
-from functools import partial
-
 
 from .diffusionmodules.util import checkpoint, AlphaBlender, timestep_embedding
 from .sub_quadratic_attention import efficient_dot_product_attention
 
-from comfy import model_management
+from ldm_patched.modules import model_management
 
 if model_management.xformers_enabled():
     import xformers
@@ -23,7 +20,7 @@ ops = ldm_patched.modules.ops.disable_weight_init
 
 # CrossAttn precision handling
 if args.disable_attention_upcast:
-    print("禁用注意力的向上转换")
+    print("disabling upcasting of attention")
     _ATTN_PRECISION = "fp16"
 else:
     _ATTN_PRECISION = "fp32"
@@ -177,6 +174,7 @@ def attention_sub_quad(query, key, value, heads, mask=None):
         kv_chunk_size_min=kv_chunk_size_min,
         use_checkpoint=False,
         upcast_attention=upcast_attention,
+        mask=mask,
     )
 
     hidden_states = hidden_states.to(dtype)
@@ -222,8 +220,8 @@ def attention_split(q, k, v, heads, mask=None):
 
     if steps > 64:
         max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
-        raise RuntimeError(f'内存不足，请使用更低的分辨率（最大约. {max_res}x{max_res}）. '
-                            f'需要: {mem_required/64/gb:0.1f}GB 的空闲内存，当前有:{mem_free_total/gb:0.1f}GB 空闲')
+        raise RuntimeError(f'Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). '
+                            f'Need: {mem_required/64/gb:0.1f}GB free, Have:{mem_free_total/gb:0.1f}GB free')
 
     # print("steps", steps, mem_required, mem_free_total, modifier, q.element_size(), tensor_size)
     first_op_done = False
@@ -239,6 +237,12 @@ def attention_split(q, k, v, heads, mask=None):
                 else:
                     s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k) * scale
 
+                if mask is not None:
+                    if len(mask.shape) == 2:
+                        s1 += mask[i:end]
+                    else:
+                        s1 += mask[:, i:end]
+
                 s2 = s1.softmax(dim=-1).to(v.dtype)
                 del s1
                 first_op_done = True
@@ -251,12 +255,12 @@ def attention_split(q, k, v, heads, mask=None):
                 model_management.soft_empty_cache(True)
                 if cleared_cache == False:
                     cleared_cache = True
-                    print("内存不足错误，正在清空缓存重试")
+                    print("out of memory error, emptying cache and trying again")
                     continue
                 steps *= 2
                 if steps > 64:
                     raise e
-                print("内存不足错误，正在增大步数重试", steps)
+                print("out of memory error, increasing steps and trying again", steps)
             else:
                 raise e
 
@@ -294,11 +298,14 @@ def attention_xformers(q, k, v, heads, mask=None):
         (q, k, v),
     )
 
-    # actually compute the attention, what we cannot get enough of
-    out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=None)
+    if mask is not None:
+        pad = 8 - q.shape[1] % 8
+        mask_out = torch.empty([q.shape[0], q.shape[1], q.shape[1] + pad], dtype=q.dtype, device=q.device)
+        mask_out[:, :, :mask.shape[-1]] = mask
+        mask = mask_out[:, :, :mask.shape[-1]]
 
-    if exists(mask):
-        raise NotImplementedError
+    out = xformers.ops.memory_efficient_attention(q, k, v, attn_bias=mask)
+
     out = (
         out.unsqueeze(0)
         .reshape(b, heads, -1, dim_head)
@@ -323,31 +330,33 @@ def attention_pytorch(q, k, v, heads, mask=None):
 
 
 optimized_attention = attention_basic
-optimized_attention_masked = attention_basic
 
 if model_management.xformers_enabled():
-    print("正在使用XFormers交叉注意力")
+    print("Using xformers cross attention")
     optimized_attention = attention_xformers
 elif model_management.pytorch_attention_enabled():
-    print("正在使用PyTorch交叉注意力")
+    print("Using pytorch cross attention")
     optimized_attention = attention_pytorch
 else:
     if args.attention_split:
-        print("正在对交叉注意力使用分裂优化")
+        print("Using split optimization for cross attention")
         optimized_attention = attention_split
     else:
-        print("如果遇到内存或速度问题，可以尝试使用次二次优化方法进行交叉注意力计算。在启动器中加入: --attention-split")
+        print("Using sub quadratic optimization for cross attention, if you have memory or speed issues try using: --attention-split")
         optimized_attention = attention_sub_quad
 
-if model_management.pytorch_attention_enabled():
-    optimized_attention_masked = attention_pytorch
+optimized_attention_masked = optimized_attention
 
-def optimized_attention_for_device(device, mask=False):
-    if device == torch.device("cpu"): #TODO
+def optimized_attention_for_device(device, mask=False, small_input=False):
+    if small_input:
         if model_management.pytorch_attention_enabled():
-            return attention_pytorch
+            return attention_pytorch #TODO: need to confirm but this is probably slightly faster for small inputs in all cases
         else:
             return attention_basic
+
+    if device == torch.device("cpu"):
+        return attention_sub_quad
+
     if mask:
         return optimized_attention_masked
 
@@ -712,7 +721,7 @@ class SpatialVideoTransformer(SpatialTransformer):
         if self.use_spatial_context:
             assert (
                 context.ndim == 3
-            ), f"n 空间上下文的维度应该是3，但实际上是 {context.ndim}"
+            ), f"n dims of spatial context should be 3 but are {context.ndim}"
 
             if time_context is None:
                 time_context = context

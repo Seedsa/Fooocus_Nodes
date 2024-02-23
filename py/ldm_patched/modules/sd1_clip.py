@@ -5,8 +5,7 @@ import ldm_patched.modules.ops
 import torch
 import traceback
 import zipfile
-from comfy import model_management
-import contextlib
+from . import model_management
 import ldm_patched.modules.clip_model
 import json
 

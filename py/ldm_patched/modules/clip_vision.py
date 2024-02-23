@@ -1,12 +1,11 @@
-from .utils import load_torch_file, transformers_convert, common_upscale
+from .utils import load_torch_file, transformers_convert, state_dict_prefix_replace
 import os
 import torch
-import contextlib
 import json
 
 import ldm_patched.modules.ops
 import ldm_patched.modules.model_patcher
-import comfy.model_management
+import ldm_patched.modules.model_management
 import ldm_patched.modules.utils
 import ldm_patched.modules.clip_model
 
@@ -34,25 +33,29 @@ class ClipVisionModel():
         with open(json_config) as f:
             config = json.load(f)
 
-        self.load_device = comfy.model_management.text_encoder_device()
-        offload_device = comfy.model_management.text_encoder_offload_device()
-        self.dtype = comfy.model_management.text_encoder_dtype(self.load_device)
+        self.load_device = ldm_patched.modules.model_management.text_encoder_device()
+        offload_device = ldm_patched.modules.model_management.text_encoder_offload_device()
+        self.dtype = ldm_patched.modules.model_management.text_encoder_dtype(self.load_device)
         self.model = ldm_patched.modules.clip_model.CLIPVisionModelProjection(config, self.dtype, offload_device, ldm_patched.modules.ops.manual_cast)
         self.model.eval()
 
         self.patcher = ldm_patched.modules.model_patcher.ModelPatcher(self.model, load_device=self.load_device, offload_device=offload_device)
+
     def load_sd(self, sd):
         return self.model.load_state_dict(sd, strict=False)
 
+    def get_sd(self):
+        return self.model.state_dict()
+
     def encode_image(self, image):
-        comfy.model_management.load_model_gpu(self.patcher)
+        ldm_patched.modules.model_management.load_model_gpu(self.patcher)
         pixel_values = clip_preprocess(image.to(self.load_device)).float()
         out = self.model(pixel_values=pixel_values, intermediate_output=-2)
 
         outputs = Output()
-        outputs["last_hidden_state"] = out[0].to(comfy.model_management.intermediate_device())
-        outputs["image_embeds"] = out[2].to(comfy.model_management.intermediate_device())
-        outputs["penultimate_hidden_states"] = out[1].to(comfy.model_management.intermediate_device())
+        outputs["last_hidden_state"] = out[0].to(ldm_patched.modules.model_management.intermediate_device())
+        outputs["image_embeds"] = out[2].to(ldm_patched.modules.model_management.intermediate_device())
+        outputs["penultimate_hidden_states"] = out[1].to(ldm_patched.modules.model_management.intermediate_device())
         return outputs
 
 def convert_to_transformers(sd, prefix):
@@ -76,6 +79,9 @@ def convert_to_transformers(sd, prefix):
             sd['visual_projection.weight'] = sd.pop("{}proj".format(prefix)).transpose(0, 1)
 
         sd = transformers_convert(sd, prefix, "vision_model.", 48)
+    else:
+        replace_prefix = {prefix: ""}
+        sd = state_dict_prefix_replace(sd, replace_prefix)
     return sd
 
 def load_clipvision_from_sd(sd, prefix="", convert_keys=False):

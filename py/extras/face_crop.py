@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import config
+import modules.config
 
 
 faceRestoreHelper = None
@@ -23,12 +23,12 @@ def align_warp_face(self, landmark, border_mode='constant'):
 
 def crop_image(img_rgb):
     global faceRestoreHelper
-
+    
     if faceRestoreHelper is None:
         from extras.facexlib.utils.face_restoration_helper import FaceRestoreHelper
         faceRestoreHelper = FaceRestoreHelper(
             upscale_factor=1,
-            model_rootpath=config.CONTROLNET_DIR,
+            model_rootpath=modules.config.path_controlnet,
             device='cpu'  # use cpu is safer since we are out of memory management
         )
 

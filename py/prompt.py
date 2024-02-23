@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from fooocus_modules.config import FOOOCUS_STYLES_DIR,RESOURCES_DIR
+from modules.config import FOOOCUS_STYLES_DIR,RESOURCES_DIR
 
 
 

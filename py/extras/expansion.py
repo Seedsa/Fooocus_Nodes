@@ -8,12 +8,12 @@
 import os
 import torch
 import math
-import comfy.model_management as model_management
+import ldm_patched.modules.model_management as model_management
 
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed
-from fooocus_modules.config import path_fooocus_expansion
-from comfy.model_patcher import ModelPatcher
+from modules.config import path_fooocus_expansion
+from ldm_patched.modules.model_patcher import ModelPatcher
 
 
 # limitation of np.random.seed(), called from transformers.set_seed()
@@ -50,7 +50,7 @@ class FooocusExpansion:
                 self.logits_bias[0, v] = 0
                 debug_list.append(k[1:])
 
-        print(f'Fooocus V2 提示词智能扩展：包含{len(debug_list)}个单词的词汇表。')
+        print(f'Fooocus V2 Expansion: Vocab with {len(debug_list)} words.')
 
         # debug_list = '\n'.join(sorted(debug_list))
         # print(debug_list)
@@ -76,7 +76,7 @@ class FooocusExpansion:
             self.model.half()
 
         self.patcher = ModelPatcher(self.model, load_device=load_device, offload_device=offload_device)
-        print(f'Fooocus 提示词智能扩展引擎已加载至 {load_device}, use_fp16 = {use_fp16}.')
+        print(f'Fooocus Expansion engine loaded for {load_device}, use_fp16 = {use_fp16}.')
 
     @torch.no_grad()
     @torch.inference_mode()
@@ -97,7 +97,7 @@ class FooocusExpansion:
             return ''
 
         if self.patcher.current_device != self.patcher.load_device:
-            print('Fooocus 提示词智能扩展自行加载完毕。')
+            print('Fooocus Expansion loaded by itself.')
             model_management.load_model_gpu(self.patcher)
 
         seed = int(seed) % SEED_LIMIT_NUMPY

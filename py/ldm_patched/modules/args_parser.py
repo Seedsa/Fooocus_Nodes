@@ -1,18 +1,6 @@
 import argparse
 import enum
 import ldm_patched.modules.options
-# 在这里添加获取局域网IP地址的函数
-def get_lan_ip():
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            ip = s.getsockname()[0]
-    except Exception:
-        ip = "127.0.0.1"
-    return ip
-
-# 在这里调用函数获取局域网IP地址
-lan_ip = get_lan_ip()
 
 class EnumAction(argparse.Action):
     """
@@ -45,7 +33,7 @@ class EnumAction(argparse.Action):
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--listen", type=str, default="0.0.0.0", metavar="IP", nargs="?", const="0.0.0.0")
+parser.add_argument("--listen", type=str, default="127.0.0.1", metavar="IP", nargs="?", const="0.0.0.0")
 parser.add_argument("--port", type=int, default=8188)
 parser.add_argument("--disable-header-check", type=str, default=None, metavar="ORIGIN", nargs="?", const="*")
 parser.add_argument("--web-upload-size", type=float, default=100)
@@ -123,6 +111,8 @@ parser.add_argument("--debug-mode", action="store_true")
 parser.add_argument("--is-windows-embedded-python", action="store_true")
 
 parser.add_argument("--disable-server-info", action="store_true")
+
+parser.add_argument("--multi-user", action="store_true")
 
 if ldm_patched.modules.options.args_parsing:
     args = parser.parse_args([])

@@ -2,14 +2,15 @@ import os
 import sys
 
 sys.path.append(os.path.dirname(__file__))
+modules_path = os.path.dirname(os.path.realpath(__file__))
 
 import numpy as np
 import folder_paths
 from comfy.samplers import *
 import config as config
-import fooocus_modules.default_pipeline as pipeline
-import fooocus_modules.core as core
-import fooocus_modules.flags as flags
+import modules.default_pipeline as pipeline
+import modules.core as core
+import modules.flags as flags
 from extras.expansion import FooocusExpansion
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
@@ -17,7 +18,7 @@ import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
 from fooocus import get_local_filepath
 from nodes import SaveImage, PreviewImage
-from fooocus_modules.util import (
+from modules.util import (
     remove_empty_str,
     HWC3,
     resize_image,
@@ -27,9 +28,9 @@ from fooocus_modules.util import (
     resample_image,
     erode_or_dilate,
 )
-from fooocus_modules.upscaler import perform_upscale
-import fooocus_modules.inpaint_worker as inpaint_worker
-import fooocus_modules.patch
+from modules.upscaler import perform_upscale
+import modules.inpaint_worker as inpaint_worker
+import modules.patch
 from typing import   Tuple
 
 import comfy.samplers
@@ -232,21 +233,32 @@ class FooocusPreKSampler:
             pipe["scheduler"] = "lcm"
             pipe["refiner_model_name"] = "None"
             pipe["refiner_switch"] = 1.0
-            fooocus_modules.patch.sharpness = 0.0
-            fooocus_modules.patch.adaptive_cfg = 1.0
-            fooocus_modules.patch.positive_adm_scale = 1.0
-            fooocus_modules.patch.negative_adm_scale = 1, 0
-            fooocus_modules.patch.adm_scaler_end = 0.0
+            modules.patch.sharpness = 0.0
+            modules.patch.adaptive_cfg = 1.0
+            modules.patch.positive_adm_scale = 1.0
+            modules.patch.negative_adm_scale = 1, 0
+            modules.patch.adm_scaler_end = 0.0
 
         config.controlnet_softness = kwargs.pop("controlnet_softness")
 
-        fooocus_modules.patch.adaptive_cfg = kwargs.pop("adaptive_cfg")
-        fooocus_modules.patch.sharpness = kwargs.pop("sharpness")
-        fooocus_modules.patch.positive_adm_scale = kwargs.pop("adm_scaler_positive")
-        fooocus_modules.patch.negative_adm_scale = kwargs.pop("adm_scaler_negative")
-        fooocus_modules.patch.adm_scaler_end = kwargs.pop("adm_scaler_end")
+        modules.patch.adaptive_cfg = kwargs.pop("adaptive_cfg")
+        print(f'[Parameters] Adaptive CFG = {modules.patch.adaptive_cfg}')
+
+        modules.patch.sharpness = kwargs.pop("sharpness")
+        print(f'[Parameters] Sharpness = {modules.patch.sharpness}')
+        modules.patch.positive_adm_scale = kwargs.pop("adm_scaler_positive")
+        modules.patch.negative_adm_scale = kwargs.pop("adm_scaler_negative")
+        modules.patch.adm_scaler_end = kwargs.pop("adm_scaler_end")
+        print(f'[Parameters] ADM Scale = '
+              f'{modules.patch.positive_adm_scale} : '
+              f'{modules.patch.negative_adm_scale} : '
+              f'{modules.patch.adm_scaler_end}')
+        print(f'[Parameters] CFG = {kwargs.pop("cfg")}')
+        print(f'[Parameters] Seed = {pipe["seed"]}')
+
         denoising_strength = kwargs.pop("denoise")
         inpaint_respective_field = pipe["inpaint_respective_field"]
+
         # 更新pipe参数
         steps = kwargs.get("steps")
         refiner_switch = pipe["refiner_switch"]
@@ -269,7 +281,10 @@ class FooocusPreKSampler:
                 use_synthetic_refiner = True
                 refiner_switch = 0.5
         switch = int(round(steps * refiner_switch))
+        print(f'[Parameters] Sampler = {pipe["sampler_name"]} - {pipe["scheduler"]}')
+        print(f'[Parameters] Steps = {steps} - {switch}')
         # 加载模型
+        print('Loading models ...')
         pipeline.refresh_everything(
             refiner_model_name=pipe["refiner_model_name"],
             base_model_name=pipe["base_model_name"],
@@ -277,6 +292,7 @@ class FooocusPreKSampler:
             base_model_additional_loras=base_model_additional_loras,
             use_synthetic_refiner=use_synthetic_refiner,
         )
+        print('Processing prompts ...')
         # 处理提示词
         prompts = remove_empty_str(
             [safe_str(p) for p in pipe["positive_prompt"].splitlines()], default=""
@@ -418,7 +434,8 @@ class FooocusPreKSampler:
             print(f"最终分辨率是 {str((final_height, final_width))}.")
         B, C, H, W = initial_latent["samples"].shape
         height, width = H * 8, W * 8
-        print(f"初始分辨率是 {str((height, width))}.")
+        print(f'[Parameters] Denoising Strength = {denoising_strength}')
+        print(f'[Parameters] Initial Latent shape: Image Space {(height,width)}')
         pipe.update(
             {
                 "positive": positive,

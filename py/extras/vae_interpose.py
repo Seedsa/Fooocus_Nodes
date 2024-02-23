@@ -4,12 +4,11 @@ import os
 import torch
 import safetensors.torch as sf
 import torch.nn as nn
-import comfy.model_management
+import ldm_patched.modules.model_management
 
 from ldm_patched.modules.model_patcher import ModelPatcher
-# from modules.config import path_vae_approx
 import folder_paths
-path_vae_approx=folder_paths.get_folder_paths("vae_approx")[0]
+path_vae_approx=folder_paths.get_folder_paths('vae_approx')[0]
 
 class Block(nn.Module):
     def __init__(self, size):
@@ -77,17 +76,17 @@ def parse(x):
         model.eval()
         sd = sf.load_file(vae_approx_filename)
         model.load_state_dict(sd)
-        fp16 = comfy.model_management.should_use_fp16()
+        fp16 = ldm_patched.modules.model_management.should_use_fp16()
         if fp16:
             model = model.half()
         vae_approx_model = ModelPatcher(
             model=model,
-            load_device=comfy.model_management.get_torch_device(),
+            load_device=ldm_patched.modules.model_management.get_torch_device(),
             offload_device=torch.device('cpu')
         )
         vae_approx_model.dtype = torch.float16 if fp16 else torch.float32
 
-    comfy.model_management.load_model_gpu(vae_approx_model)
+    ldm_patched.modules.model_management.load_model_gpu(vae_approx_model)
 
     x = x_origin.to(device=vae_approx_model.load_device, dtype=vae_approx_model.dtype)
     x = vae_approx_model.model(x).to(x_origin)

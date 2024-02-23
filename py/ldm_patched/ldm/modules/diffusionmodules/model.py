@@ -6,7 +6,7 @@ import numpy as np
 from einops import rearrange
 from typing import Optional, Any
 
-from comfy import model_management
+from ldm_patched.modules import model_management
 import ldm_patched.modules.ops
 ops = ldm_patched.modules.ops.disable_weight_init
 
@@ -190,7 +190,7 @@ def slice_attention(q, k, v):
             steps *= 2
             if steps > 128:
                 raise e
-            print("内存不足错误，正在增加步数并重试", steps)
+            print("out of memory error, increasing steps and trying again", steps)
 
     return r1
 
@@ -268,13 +268,13 @@ class AttnBlock(nn.Module):
                                         padding=0)
 
         if model_management.xformers_enabled_vae():
-            print("在VAE中使用xformers注意力机制")
+            print("Using xformers attention in VAE")
             self.optimized_attention = xformers_attention
         elif model_management.pytorch_attention_enabled():
-            print("在VAE中使用PyTorch注意力机制")
+            print("Using pytorch attention in VAE")
             self.optimized_attention = pytorch_attention
         else:
-            print("在VAE中使用Split注意力机制")
+            print("Using split attention in VAE")
             self.optimized_attention = normal_attention
 
     def forward(self, x):
