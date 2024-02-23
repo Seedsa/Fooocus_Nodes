@@ -231,6 +231,7 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
         refresh_base_model(base_model_name)
         synthesize_refiner_model()
     else:
+        print('go down',refiner_model_name)
         refresh_refiner_model(refiner_model_name)
         refresh_base_model(base_model_name)
 
