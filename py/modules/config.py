@@ -62,3 +62,28 @@ FOOOCUS_IMAGE_PROMPT = {
 controlnet_softness=0.25
 path_fooocus_expansion = folder_paths.models_dir+"/prompt_expansion/fooocus_expansion"
 path_loras=folder_paths.get_folder_paths('loras')[0]
+path_checkpoints=folder_paths.get_folder_paths('checkpoints')[0]
+default_refiner_model_name='None'
+default_base_model_name="juggernautXL_v8Rundiffusion.safetensors"
+default_loras=[
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ],
+        [
+            "None",
+            1.0
+        ]
+    ]
