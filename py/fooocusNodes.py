@@ -302,6 +302,7 @@ class FooocusPreKSampler:
             [safe_str(p) for p in pipe["negative_prompt"].splitlines()],
             default="",
         )
+        print(prompts,len(prompts))
         positive = pipeline.clip_encode(prompts, len(prompts))
         negative = pipeline.clip_encode(
             negative_prompts, len(negative_prompts))
