@@ -59,8 +59,9 @@ def assert_model_integrity():
 @torch.inference_mode()
 def refresh_base_model(name):
     global model_base
+    import folder_paths
 
-    filename = os.path.abspath(os.path.realpath(os.path.join(modules.config.path_checkpoints, name)))
+    filename = folder_paths.get_full_path("checkpoints", name)
 
     if model_base.filename == filename:
         return
@@ -75,8 +76,9 @@ def refresh_base_model(name):
 @torch.inference_mode()
 def refresh_refiner_model(name):
     global model_refiner
+    import folder_paths
 
-    filename = os.path.abspath(os.path.realpath(os.path.join(modules.config.path_checkpoints, name)))
+    filename = folder_paths.get_full_path("checkpoints", name)
 
     if model_refiner.filename == filename:
         return
@@ -250,11 +252,11 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
     return
 
 
-refresh_everything(
-    refiner_model_name=modules.config.default_refiner_model_name,
-    base_model_name=modules.config.default_base_model_name,
-    loras=modules.config.default_loras
-)
+# refresh_everything(
+#     refiner_model_name=modules.config.default_refiner_model_name,
+#     base_model_name=modules.config.default_base_model_name,
+#     loras=modules.config.default_loras
+# )
 
 
 @torch.no_grad()
