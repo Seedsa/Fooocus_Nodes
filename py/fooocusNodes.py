@@ -285,6 +285,8 @@ class FooocusPreKSampler:
         print(f'[Parameters] Steps = {steps} - {switch}')
         # 加载模型
         print('Loading models ...')
+        print(pipe["refiner_model_name"],pipe["base_model_name"],pipe["optional_lora_stack"],)
+        print(base_model_additional_loras)
         pipeline.refresh_everything(
             refiner_model_name=pipe["refiner_model_name"],
             base_model_name=pipe["base_model_name"],
