@@ -392,6 +392,7 @@ class FooocusPreKSampler:
             right=fooocus_inpaint.get("right")
             inpaint_image = inpaint_image[0].numpy()
             inpaint_image = (inpaint_image * 255).astype(np.uint8)
+            inpaint_image = HWC3(inpaint_image)
             if top or bottom or left or right:
                 print("启用扩图！")
                 inpaint_mask = np.zeros(inpaint_image.shape, dtype=np.uint8)
@@ -455,6 +456,7 @@ class FooocusPreKSampler:
                 use_fill=denoising_strength > 0.99,
                 k=inpaint_respective_field,
             )
+            print('VAE Inpaint encoding ...')
             inpaint_pixel_fill = core.numpy_to_pytorch(
                 inpaint_worker.current_task.interested_fill
             )
@@ -475,12 +477,12 @@ class FooocusPreKSampler:
             )
             latent_swap = None
             if candidate_vae_swap is not None:
-                print("正在编码SD1.5局部重绘VAE……")
+                print("VAE SD15 encoding ...")
                 latent_swap = core.encode_vae(
                     vae=candidate_vae_swap, pixels=inpaint_pixel_fill
                 )["samples"]
 
-            print("正在编码VAE……")
+            print("VAE encoding ..")
             latent_fill = core.encode_vae(vae=candidate_vae, pixels=inpaint_pixel_fill)[
                 "samples"
             ]
@@ -499,6 +501,7 @@ class FooocusPreKSampler:
               )
             if not inpaint_disable_initial_latent:
                 initial_latent = {'samples': latent_fill}
+
             B, C, H, W = latent_fill.shape
             height, width = H * 8, W * 8
             final_height, final_width = inpaint_worker.current_task.image.shape[:2]
