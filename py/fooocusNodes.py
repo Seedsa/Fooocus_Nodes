@@ -541,7 +541,7 @@ class FooocusKsampler:
             try:
                 print(f"正在生成第 {current_task_id + 1} 张图像……")
                 positive_cond, negative_cond = task['c'], task['uc']
-                if pipe["cn_tasks"] is not None:
+                if "cn_tasks" in pipe and len(pipe["cn_tasks"]) > 0:
                     for cn_path,cn_img, cn_stop, cn_weight in pipe["cn_tasks"]:
                         positive_cond, negative_cond = core.apply_controlnet(
                             positive_cond, negative_cond,
