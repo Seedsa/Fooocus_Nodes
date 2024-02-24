@@ -144,9 +144,16 @@ class FooocusLoader:
 
     def fooocus_loader(self, optional_lora_stack=[], **kwargs):
         resolution = kwargs.pop("resolution")
-        empty_latent_width, empty_latent_height = self.process_resolution(
-            resolution
-        )
+        if resolution != "自定义 x 自定义":
+            try:
+                width, height = map(int, resolution.split(' x '))
+                empty_latent_width = width
+                empty_latent_height = height
+            except ValueError:
+                raise ValueError("Invalid base_resolution format.")
+        else:
+            empty_latent_width = kwargs.pop("empty_latent_width")
+            empty_latent_height = kwargs.pop("empty_latent_height")
         pipe = {
             # 将关键字参数赋值给pipe字典
             key: value
