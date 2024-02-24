@@ -255,6 +255,8 @@ class FooocusPreKSampler:
         print(f'[Parameters] Seed = {kwargs.get("seed")}')
 
         denoising_strength = kwargs.pop("denoise")
+        height = pipe["latent_height"]
+        width = pipe["latent_width"]
         if fooocus_styles is not None:
             style_selections = fooocus_styles
         else:
@@ -506,7 +508,7 @@ class FooocusPreKSampler:
         if isinstance(initial_latent, dict) and 'samples' in initial_latent:
             log_shape = initial_latent['samples'].shape
         else:
-            log_shape = f'Image Space {(pipe["latent_height"], pipe["latent_width"])}'
+            log_shape = f'Image Space {(height, width)}'
 
         print(f'[Parameters] Initial Latent shape: {log_shape}')
 
