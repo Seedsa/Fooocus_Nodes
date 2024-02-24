@@ -7,6 +7,7 @@ from torch.hub import download_url_to_file
 from log import log_node_warn
 
 BASE_RESOLUTIONS = [
+    (128,128),
     (512, 512),
     (512, 768),
     (768, 512),
