@@ -279,12 +279,13 @@ class FooocusPreKSampler:
 
         if fooocus_inpaint is not None:
             inpaint_engine = fooocus_inpaint.get("inpaint_engine")
-            head_file = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
-            patch_file = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
-            base_model_additional_loras += [(patch_file, 1.0)]
-            if pipe["refiner_model_name"] == "None":
-                use_synthetic_refiner = True
-                refiner_switch = 0.5
+            if inpaint_engine != 'None':
+              head_file = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
+              patch_file = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
+              base_model_additional_loras += [(patch_file, 1.0)]
+              if pipe["refiner_model_name"] == "None":
+                  use_synthetic_refiner = True
+                  refiner_switch = 0.5
         switch = int(round(steps * refiner_switch))
         print(f'[Parameters] Sampler = {pipe["sampler_name"]} - {pipe["scheduler"]}')
         print(f'[Parameters] Steps = {steps} - {switch}')
@@ -383,6 +384,8 @@ class FooocusPreKSampler:
         if fooocus_inpaint is not None:
             inpaint_image = fooocus_inpaint.get("image")
             inpaint_mask =  fooocus_inpaint.get("mask")
+            inpaint_engine = fooocus_inpaint.get("inpaint_engine")
+            inpaint_disable_initial_latent = fooocus_inpaint.get("inpaint_disable_initial_latent")
             inpaint_respective_field = fooocus_inpaint.get("inpaint_respective_field")
             top=fooocus_inpaint.get("top")
             bottom=fooocus_inpaint.get("bottom")
@@ -488,13 +491,15 @@ class FooocusPreKSampler:
                 latent_mask=latent_mask,
                 latent_swap=latent_swap,
             )
-            pipeline.final_unet = inpaint_worker.current_task.patch(
-                inpaint_head_model_path=head_file,
-                inpaint_latent=latent_inpaint,
-                inpaint_latent_mask=latent_mask,
-                model=pipeline.final_unet,
-            )
-            initial_latent = {"samples": latent_fill}
+            if inpaint_engine != 'None':
+              pipeline.final_unet = inpaint_worker.current_task.patch(
+                  inpaint_head_model_path=head_file,
+                  inpaint_latent=latent_inpaint,
+                  inpaint_latent_mask=latent_mask,
+                  model=pipeline.final_unet,
+              )
+            if not inpaint_disable_initial_latent:
+                initial_latent = {'samples': latent_fill}
 
             final_height, final_width = inpaint_worker.current_task.image.shape[:2]
             print(f"最终分辨率是 {str((final_height, final_width))}.")
@@ -831,8 +836,9 @@ class FooocusInpaint:
         return {
             "required": {
                 "image": ("IMAGE",),
+                "inpaint_disable_initial_latent":("BOOLEAN", {"default": False}),
                 "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
-                "inpaint_engine":(list(config.FOOOCUS_INPAINT_PATCH.keys()),),
+                "inpaint_engine":(config.inpaint_engine_versions,{"default":"v2.6"},),
                 "top": ("BOOLEAN", {"default": False}),
                 "bottom": ("BOOLEAN", {"default": False}),
                 "left": ("BOOLEAN", {"default": False}),
@@ -849,11 +855,12 @@ class FooocusInpaint:
     CATEGORY = "Fooocus"
 
     def fooocus_inpaint(
-        self, image,inpaint_respective_field,inpaint_engine,top,bottom,left,right,mask=None
+        self, image,inpaint_disable_initial_latent,inpaint_respective_field,inpaint_engine,top,bottom,left,right,mask=None
     ):
         fooocus_inpaint = {
             "image":image,
             "mask":mask,
+            "inpaint_disable_initial_latent":inpaint_disable_initial_latent,
             "inpaint_respective_field":inpaint_respective_field,
             "inpaint_engine":inpaint_engine,
             "top":top,

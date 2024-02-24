@@ -38,7 +38,7 @@ CLIP_VISION_DIR = os.path.join(folder_paths.models_dir, "clip_vision")
 RESOURCES_DIR = os.path.join(Path(__file__).parent.parent.parent, "resources")
 FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "styles")
 
-
+inpaint_engine_versions = ['None', 'v1', 'v2.5', 'v2.6']
 FOOOCUS_INPAINT_HEAD = {
     "fooocus_inpaint_head": {
         "model_url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_inpaint_head.pth"
