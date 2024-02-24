@@ -115,8 +115,6 @@ class FooocusLoader:
                 "refiner_swap_method": (["joint", "separate", "vae"],),
                 "positive_prompt": ("STRING", {"forceInput": True}),
                 "negative_prompt": ("STRING", {"forceInput": True}),
-                "prompt_expansion": ("BOOLEAN", {"default": True}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": MAX_SEED}),
                 "resolution": (resolution_strings, {"default": "1024 x 1024"}),
                 "empty_latent_width": ("INT", {"default": 1024, "min": 64, "max": 2048, "step": 8},),
                 "empty_latent_height": ("INT", {"default": 1024, "min": 64, "max": 2048, "step": 8},),
@@ -154,15 +152,6 @@ class FooocusLoader:
             if key not in ("empty_latent_width", "empty_latent_height")
         }
         positive_prompt = kwargs["positive_prompt"]
-        if positive_prompt != "" and pipe["prompt_expansion"]:
-            pipeline.final_expansion = FooocusExpansion()
-            positive_prompt = pipeline.final_expansion(
-                positive_prompt,
-                pipe["seed"],
-            )
-            print("PromptExpansion is:  " + positive_prompt)
-        else:
-            print("PromptExpansion is off or positive prompt is none!!  ")
         latent = core.generate_empty_latent(
                     empty_latent_width, empty_latent_height)
         pipe.update(
@@ -198,6 +187,7 @@ class FooocusPreKSampler:
                 "cfg": ("FLOAT", {"default": 4.0, "min": 0.0, "max": 100.0, "step": 0.5},),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, {"default": "dpmpp_2m_sde_gpu", },),
                 "scheduler": (comfy.samplers.KSampler.SCHEDULERS, {"default": "karras", },),
+                "seed": ("INT", {"default": 0, "min": 0, "max": MAX_SEED}),
                 "denoise": ("FLOAT", {"default": 1.00, "min": 0.00, "max": 1.00, "step": 0.01},),
                 "settings": (["Simple", "Advanced"], {"default": "Simple"}),
                 "sharpness": ("FLOAT", {"default": 2.0, "min": 0.0, "max": 100.0}),
@@ -256,7 +246,7 @@ class FooocusPreKSampler:
               f'{modules.patch.negative_adm_scale} : '
               f'{modules.patch.adm_scaler_end}')
         print(f'[Parameters] CFG = {kwargs.get("cfg")}')
-        print(f'[Parameters] Seed = {pipe["seed"]}')
+        print(f'[Parameters] Seed = {kwargs.get("seed")}')
 
         denoising_strength = kwargs.pop("denoise")
         if fooocus_styles is not None:
@@ -310,7 +300,7 @@ class FooocusPreKSampler:
         extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
         extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
         for i in range(pipe["image_number"]):
-            task_seed = (pipe["seed"] + i) % (MAX_SEED + 1)  # randint is inclusive, % is not
+            task_seed = (kwargs.get("seed") + i) % (MAX_SEED + 1)  # randint is inclusive, % is not
             task_rng = random.Random(task_seed)  # may bind to inpaint noise in the future
             task_prompt = apply_wildcards(prompt, task_rng)
             task_negative_prompt = apply_wildcards(negative_prompt, task_rng)
@@ -504,6 +494,7 @@ class FooocusPreKSampler:
             {
                 "tasks":tasks,
                 "positive": prompt,
+                "seed":kwargs.get("seed"),
                 "negative": negative_prompt,
                 "denoise": denoising_strength,
                 "latent": initial_latent,

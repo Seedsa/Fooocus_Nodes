@@ -128,6 +128,12 @@ async function getStylesList(name) {
     const resp = await api.fetchApi(`/fooocus/prompt/styles?name=${name}`);
     if (resp.status === 200) {
       let data = await resp.json();
+      console.log("data", data);
+      data.unshift({
+        imgName: "Fooocus V2",
+        name: "Fooocus V2",
+        name_cn: "Fooocus V2",
+      });
       styles_list_cache[name] = data;
       return data;
     }
