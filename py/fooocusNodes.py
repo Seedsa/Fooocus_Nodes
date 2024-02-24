@@ -448,8 +448,8 @@ class FooocusPreKSampler:
             elif inpaint_mask == None:
                 raise Exception("inpaint_mask is None!!")
             else:
-                inpaint_mask = inpaint_mask[0].numpy()
                 inpaint_mask = inpaint_mask[:, :, 0]
+                # inpaint_mask = inpaint_mask[0].numpy()
             inpaint_worker.current_task = inpaint_worker.InpaintWorker(
                 image=inpaint_image,
                 mask=inpaint_mask,
