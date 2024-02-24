@@ -118,8 +118,8 @@ class FooocusLoader:
             "optional": {"optional_lora_stack": ("LORA_STACK",)},
         }
 
-    RETURN_TYPES = ("PIPE_LINE")
-    RETURN_NAMES = ("pipe")
+    RETURN_TYPES = ("PIPE_LINE",)
+    RETURN_NAMES = ("pipe",)
     FUNCTION = "fooocus_loader"
     CATEGORY = "Fooocus"
 
@@ -188,7 +188,6 @@ class FooocusPreKSampler:
         return {
             "required": {
                 "pipe": ("PIPE_LINE",),
-                "generation_mode": (["text_or_images_to_images", "inpaint", "outpaint"], {"default": "text_or_images_to_images"}, ),
                 "steps": ("INT", {"default": 30, "min": 1, "max": 10000}),
                 "cfg": ("FLOAT", {"default": 4.0, "min": 0.0, "max": 100.0, "step": 0.5},),
                 "sampler_name": (comfy.samplers.KSampler.SAMPLERS, {"default": "dpmpp_2m_sde_gpu", },),
@@ -201,18 +200,11 @@ class FooocusPreKSampler:
                 "adm_scaler_negative": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 3.0, "step": 0.1},),
                 "adm_scaler_end": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.1},),
                 "controlnet_softness": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01},),
-                "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
-                "inpaint_engine":(list(config.FOOOCUS_INPAINT_PATCH.keys()),),
-                "top": ("BOOLEAN", {"default": False}),
-                "bottom": ("BOOLEAN", {"default": False}),
-                "left": ("BOOLEAN", {"default": False}),
-                "right": ("BOOLEAN", {"default": False}),
             },
             "optional": {
                 "image_to_latent": ("IMAGE",),
                 "latent":("LATENT",),
-                "inpaint_image": ("IMAGE",),
-                "inpaint_mask": ("MASK",),
+                "fooocus_inpaint":("FOOOCUS_INPAINT",),
             },
         }
 
@@ -222,7 +214,7 @@ class FooocusPreKSampler:
     FUNCTION = "fooocus_preKSampler"
     CATEGORY = "Fooocus"
 
-    def fooocus_preKSampler(self, pipe: dict,image_to_latent=None, latent=None,inpaint_image=None, inpaint_mask=None,inpaint_engine=None, **kwargs):
+    def fooocus_preKSampler(self, pipe: dict,image_to_latent=None, latent=None,fooocus_inpaint=None, **kwargs):
         # 检查pipe非空
         assert pipe is not None, "请先调用 FooocusLoader 进行初始化！"
         pipe.update(
@@ -260,7 +252,6 @@ class FooocusPreKSampler:
         print(f'[Parameters] Seed = {pipe["seed"]}')
 
         denoising_strength = kwargs.pop("denoise")
-        inpaint_respective_field = pipe["inpaint_respective_field"]
 
         # 更新pipe参数
         steps = kwargs.get("steps")
@@ -268,15 +259,9 @@ class FooocusPreKSampler:
         base_model_additional_loras = []
         inpaint_worker.current_task = None
         use_synthetic_refiner = False
-        if inpaint_image is None:
-            pipe["generation_mode"] = "text_or_images_to_images"
-        if pipe["generation_mode"] == "inpaint":
-            pipe["top"] = False
-            pipe["bottom"] = False
-            pipe["left"] = False
-            pipe["right"] = False
 
-        if (pipe["generation_mode"] == "inpaint" or pipe["generation_mode"] == "outpaint"):
+        if fooocus_inpaint is not None:
+            inpaint_engine = fooocus_inpaint.get("inpaint_engine")
             head_file = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
             patch_file = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
             base_model_additional_loras += [(patch_file, 1.0)]
@@ -322,18 +307,22 @@ class FooocusPreKSampler:
             initial_latent = latent
         else:
             initial_latent = pipe["latent"]
-        # 预处理latent
-        if pipe["generation_mode"] == "text_or_images_to_images":
-            print('text 2 img')
-        else:
+        if fooocus_inpaint is not None:
+            inpaint_image = fooocus_inpaint.get("image")
+            inpaint_mask =  fooocus_inpaint.get("mask")
+            inpaint_respective_field = fooocus_inpaint.get("inpaint_respective_field")
+            top=fooocus_inpaint.get("top")
+            bottom=fooocus_inpaint.get("bottom")
+            left=fooocus_inpaint.get("left")
+            right=fooocus_inpaint.get("right")
             inpaint_image = inpaint_image[0].numpy()
             inpaint_image = (inpaint_image * 255).astype(np.uint8)
-            if pipe["top"] or pipe["bottom"] or pipe["left"] or pipe["right"]:
+            if top or bottom or left or right:
                 print("启用扩图！")
                 inpaint_mask = np.zeros(inpaint_image.shape, dtype=np.uint8)
                 inpaint_mask = inpaint_mask[:, :, 0]
                 H, W, C = inpaint_image.shape
-                if pipe["top"]:
+                if top:
                     inpaint_image = np.pad(
                         inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode="edge"
                     )
@@ -343,7 +332,7 @@ class FooocusPreKSampler:
                         mode="constant",
                         constant_values=255,
                     )
-                if pipe["bottom"]:
+                if bottom:
                     inpaint_image = np.pad(
                         inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode="edge"
                     )
@@ -355,7 +344,7 @@ class FooocusPreKSampler:
                     )
 
                 H, W, C = inpaint_image.shape
-                if pipe["left"]:
+                if left:
                     inpaint_image = np.pad(
                         inpaint_image, [[0, 0], [int(H * 0.3), 0], [0, 0]], mode="edge"
                     )
@@ -365,7 +354,7 @@ class FooocusPreKSampler:
                         mode="constant",
                         constant_values=255,
                     )
-                if pipe["right"]:
+                if right:
                     inpaint_image = np.pad(
                         inpaint_image, [[0, 0], [0, int(H * 0.3)], [0, 0]], mode="edge"
                     )
@@ -447,7 +436,6 @@ class FooocusPreKSampler:
                 "denoise": denoising_strength,
                 "latent": initial_latent,
                 "model": pipeline.final_unet,
-                "inpaint_respective_field": inpaint_respective_field,
                 "height": height,
                 "width": width,
                 "switch": switch,
@@ -772,6 +760,44 @@ class FooocusApplyImagePrompt:
         new_model = ip_adapter.patch_model(work_model, image_prompt_tasks)
         return (new_model, )
 
+class FooocusInpaint:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
+                "inpaint_engine":(list(config.FOOOCUS_INPAINT_PATCH.keys()),),
+                "top": ("BOOLEAN", {"default": False}),
+                "bottom": ("BOOLEAN", {"default": False}),
+                "left": ("BOOLEAN", {"default": False}),
+                "right": ("BOOLEAN", {"default": False}),
+            },
+            "optional": {
+                "mask": ("MASK",),
+            },
+        }
+    RETURN_TYPES = ("FOOOCUS_INPAINT",)
+    RETURN_NAMES = ("fooocus_inpaint",)
+    OUTPUT_NODE = True
+    FUNCTION = "fooocus_inpaint"
+    CATEGORY = "Fooocus"
+
+    def fooocus_inpaint(
+        self, image,inpaint_respective_field,inpaint_engine,top,bottom,left,right,mask=None
+    ):
+        fooocus_inpaint = {
+            "image":image,
+            "mask":mask,
+            "inpaint_respective_field":inpaint_respective_field,
+            "inpaint_engine":inpaint_engine,
+            "top":top,
+            "bottom":bottom,
+            "left":left,
+            "right":right
+        }
+        return (fooocus_inpaint, )
+
 NODE_CLASS_MAPPINGS = {
 
     "Fooocus Loader": FooocusLoader,
@@ -782,8 +808,7 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Controlnet": FooocusControlnet,
     "Fooocus ImagePrompt": FooocusImagePrompt,
     "Fooocus ApplyImagePrompt": FooocusApplyImagePrompt,
-
-
+    "Fooocus Inpaint":FooocusInpaint
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
