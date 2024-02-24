@@ -7,7 +7,7 @@ def centered_canny(x: np.ndarray):
     assert isinstance(x, np.ndarray)
     assert x.ndim == 2 and x.dtype == np.uint8
 
-    y = cv2.Canny(x, int(advanced_parameters.canny_low_threshold), int(advanced_parameters.canny_high_threshold))
+    y = cv2.Canny(x, int(64), int(128))
     y = y.astype(np.float32) / 255.0
     return y
 

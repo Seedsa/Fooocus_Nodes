@@ -725,8 +725,6 @@ class FooocusControlnet:
           image = resize_image(HWC3(image), pipe["width"], pipe["height"])
           if not skip_cn_preprocess:
             image = preprocessors.canny_pyramid(image)
-          image = HWC3(image)
-          image = core.numpy_to_pytorch(image)
         if cn_type == config.cn_cpds:
           cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[config.cn_cpds]["model_url"],config.CONTROLNET_DIR)
           image = image[0].numpy()
@@ -734,8 +732,8 @@ class FooocusControlnet:
           image = resize_image(HWC3(image), pipe["width"], pipe["height"])
           if not skip_cn_preprocess:
             image = preprocessors.cpds(image)
-          image = HWC3(image)
-          image = core.numpy_to_pytorch(image)
+        image = HWC3(image)
+        image = core.numpy_to_pytorch(image)
         new_pipe = pipe.copy()
         if "cn_tasks" not in new_pipe:
             new_pipe["cn_tasks"] = []
