@@ -14,6 +14,8 @@ from modules.sdxl_styles import apply_style,apply_wildcards,fooocus_expansion
 from extras.expansion import FooocusExpansion
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
+import modules.flags as flags
+
 import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
 from fooocus import get_local_filepath
@@ -534,17 +536,16 @@ class FooocusKsampler:
     def ksampler(self, pipe, image_output, save_prefix, model=None, prompt=None, extra_pnginfo=None):
         if model is not None:
             pipeline.final_unet = model
-        if pipe["use_cn"]:
-            positive = pipe["cn_positive"]
-            negative = pipe["cn_negative"]
-        else:
-            positive = pipe["positive"]
-            negative = pipe["negative"]
         all_imgs = []
         for current_task_id, task in enumerate(pipe["tasks"]):
             try:
                 print(f"正在生成第 {current_task_id + 1} 张图像……")
                 positive_cond, negative_cond = task['c'], task['uc']
+                if pipe["cn_tasks"] is not None:
+                    for cn_path,cn_img, cn_stop, cn_weight in pipe["cn_tasks"]:
+                        positive_cond, negative_cond = core.apply_controlnet(
+                            positive_cond, negative_cond,
+                            core.load_controlnet(cn_path), cn_img, cn_weight, 0, cn_stop)
                 imgs = pipeline.process_diffusion(
                   positive_cond=positive_cond,
                   negative_cond=negative_cond,
@@ -716,6 +717,7 @@ class FooocusControlnet:
     def apply_controlnet(
         self, pipe, image, cn_type, cn_stop, cn_weight, skip_cn_preprocess
     ):
+        print("process controlnet...")
         if cn_type == config.cn_canny:
           cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[config.cn_canny]["model_url"],config.CONTROLNET_DIR)
           image = image[0].numpy()
@@ -734,20 +736,10 @@ class FooocusControlnet:
             image = preprocessors.cpds(image)
           image = HWC3(image)
           image = core.numpy_to_pytorch(image)
-
-        positive_cond, negative_cond = core.apply_controlnet(
-            pipe["positive"],
-            pipe["negative"],
-            core.load_controlnet(cn_path),
-            image,
-            cn_weight,
-            0,
-            cn_stop,
-        )
         new_pipe = pipe.copy()
-        new_pipe["use_cn"] = True
-        new_pipe["cn_positive"] = positive_cond
-        new_pipe["cn_negative"] = negative_cond
+        if "cn_tasks" not in new_pipe:
+            new_pipe["cn_tasks"] = []
+        new_pipe["cn_tasks"].append([cn_path,image,cn_stop,cn_weight])
         return (new_pipe, image,)
 
 class FooocusImagePrompt:
@@ -791,9 +783,6 @@ class FooocusImagePrompt:
           image = resize_image(image, width=224, height=224, resize_mode=0)
           task = [image,ip_stop,ip_weight]
           task[0] = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_face_path)
-        # work_model = model.clone()
-        # new_model = ip_adapter.patch_model(work_model, [task])
-        # return (new_model, )
         return (task, )
 
 class FooocusApplyImagePrompt:
