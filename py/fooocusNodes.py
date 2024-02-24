@@ -296,6 +296,9 @@ class FooocusPreKSampler:
         negative_prompts = remove_empty_str([safe_str(p) for p in pipe["negative_prompt"].splitlines()], default='')
         prompt = prompts[0]
         negative_prompt = negative_prompts[0]
+        positive = pipeline.clip_encode(prompts, len(prompts))
+        negative = pipeline.clip_encode(
+            negative_prompts, len(negative_prompts))
         if prompt == '':
                 # disable expansion when empty since it is not meaningful and influences image prompt
                 use_expansion = False
@@ -508,7 +511,7 @@ class FooocusPreKSampler:
         )
         new_pipe = pipe.copy()
         del pipe
-        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae,prompt,negative_prompt)}
+        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae,positive,negative)}
 
 
 class FooocusKsampler:
