@@ -161,13 +161,10 @@ class FooocusLoader:
             if key not in ("empty_latent_width", "empty_latent_height")
         }
         positive_prompt = kwargs["positive_prompt"]
-        latent = core.generate_empty_latent(
-                    empty_latent_width, empty_latent_height)
         pipe.update(
             {
                 "positive_prompt": positive_prompt,
                 "negative_prompt": kwargs["negative_prompt"],
-                "latent":latent,
                 "latent_width": empty_latent_width,
                 "latent_height": empty_latent_height,
                 "optional_lora_stack": optional_lora_stack,
@@ -380,7 +377,7 @@ class FooocusPreKSampler:
         elif latent is not None:
             initial_latent = latent
         else:
-            initial_latent = pipe["latent"]
+            initial_latent = None
         if fooocus_inpaint is not None:
             inpaint_image = fooocus_inpaint.get("image")
             inpaint_mask =  fooocus_inpaint.get("mask")
@@ -500,13 +497,19 @@ class FooocusPreKSampler:
               )
             if not inpaint_disable_initial_latent:
                 initial_latent = {'samples': latent_fill}
-
+            B, C, H, W = latent_fill.shape
+            height, width = H * 8, W * 8
             final_height, final_width = inpaint_worker.current_task.image.shape[:2]
-            print(f"最终分辨率是 {str((final_height, final_width))}.")
-        B, C, H, W = initial_latent["samples"].shape
-        height, width = H * 8, W * 8
+            print(f'Final resolution is {str((final_height, final_width))}, latent is {str((height, width))}.')
+
         print(f'[Parameters] Denoising Strength = {denoising_strength}')
-        print(f'[Parameters] Initial Latent shape: Image Space {(height,width)}')
+        if isinstance(initial_latent, dict) and 'samples' in initial_latent:
+            log_shape = initial_latent['samples'].shape
+        else:
+            log_shape = f'Image Space {(pipe["latent_height"], pipe["latent_width"])}'
+
+        print(f'[Parameters] Initial Latent shape: {log_shape}')
+
         pipe.update(
             {
                 "tasks":tasks,
