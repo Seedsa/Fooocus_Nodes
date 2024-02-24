@@ -31,7 +31,7 @@ BASE_RESOLUTIONS = [
 INPAINT_DIR = os.path.join(folder_paths.models_dir, "inpaint")
 CONTROLNET_DIR = os.path.join(folder_paths.models_dir, "controlnet")
 RESOURCES_DIR = os.path.join(Path(__file__).parent.parent.parent, "resources")
-FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "styles")
+FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "sdxl_styles")
 
 
 FOOOCUS_INPAINT_HEAD = {

@@ -1,8 +1,12 @@
 import re
 import os
 import sys
+
+sys.path.append(os.path.dirname(__file__))
+modules_path = os.path.dirname(os.path.realpath(__file__))
 import json
 from server import PromptServer
+from modules.sdxl_styles import legal_style_names
 
 try:
     import aiohttp
@@ -30,45 +34,12 @@ async def parse_csv(request):
 #get style list
 styles_dir = os.path.abspath(os.path.join(__file__, "../../styles"))
 samples_dir= os.path.abspath(os.path.join(__file__, "../../styles/samples"))
-resource_dir = os.path.abspath(os.path.join(__file__, "../../resources"))
+resource_dir = os.path.abspath(os.path.join(__file__, "../../sdxl_styles"))
 @PromptServer.instance.routes.get("/fooocus/prompt/styles")
 async def getStylesList(request):
     if "name" in request.rel_url.query:
         name = request.rel_url.query["name"]
-        if name == 'fooocus_styles':
-            file = os.path.join(resource_dir, name+'.json')
-            cn_file = os.path.join(resource_dir, name + '_cn.json')
-        else:
-            file = os.path.join(styles_dir, name+'.json')
-            cn_file = os.path.join(styles_dir, name + '_cn.json')
-        cn_data = None
-        if os.path.isfile(cn_file):
-            f = open(cn_file, 'r', encoding='utf-8')
-            cn_data = json.load(f)
-            f.close()
-        if os.path.isfile(file):
-            f = open(file, 'r', encoding='utf-8')
-            data = json.load(f)
-            f.close()
-            if data:
-                ndata = []
-                for d in data:
-                    nd = {}
-                    name = d['name'].replace('-', ' ')
-                    words = name.split(' ')
-                    key = ' '.join(
-                        word.upper() if word.lower() in ['mre', 'sai', '3d'] else word.capitalize() for word in
-                        words)
-                    img_name = '_'.join(words).lower()
-                    if "name_cn" in d:
-                        nd['name_cn'] = d['name_cn']
-                    elif cn_data:
-                        nd['name_cn'] = cn_data[key] if key in cn_data else key
-                    nd["name"] = d['name']
-                    nd['imgName'] = img_name
-                    ndata.append(nd)
-                return web.json_response(ndata)
-    return web.Response(status=400)
+    return web.json_response(legal_style_names)
 
 # get style preview image
 fooocus_images_path = samples_dir
