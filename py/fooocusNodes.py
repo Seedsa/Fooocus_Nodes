@@ -35,13 +35,10 @@ from typing import   Tuple
 
 import comfy.samplers
 
-
 MIN_SEED = 0
 MAX_SEED = 2**63 - 1
 
 # lora
-
-
 class FooocusLoraStack:
     def __init__(self):
         pass
@@ -121,8 +118,8 @@ class FooocusLoader:
             "optional": {"optional_lora_stack": ("LORA_STACK",)},
         }
 
-    RETURN_TYPES = ("PIPE_LINE", )
-    RETURN_NAMES = ("pipe",)
+    RETURN_TYPES = ("PIPE_LINE")
+    RETURN_NAMES = ("pipe")
     FUNCTION = "fooocus_loader"
     CATEGORY = "Fooocus"
 
@@ -161,12 +158,12 @@ class FooocusLoader:
         else:
             print("PromptExpansion is off or positive prompt is none!!  ")
         latent = core.generate_empty_latent(
-            empty_latent_width, empty_latent_height)
+                    empty_latent_width, empty_latent_height)
         pipe.update(
             {
                 "positive_prompt": positive_prompt,
                 "negative_prompt": kwargs["negative_prompt"],
-                "latent": latent,
+                "latent":latent,
                 "latent_width": empty_latent_width,
                 "latent_height": empty_latent_height,
                 "optional_lora_stack": optional_lora_stack,
@@ -181,7 +178,6 @@ class FooocusLoader:
             },
             "result": (
                 pipe,
-
             ),
         }
 
@@ -205,23 +201,28 @@ class FooocusPreKSampler:
                 "adm_scaler_negative": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 3.0, "step": 0.1},),
                 "adm_scaler_end": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.1},),
                 "controlnet_softness": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01},),
-                "inpaint_engine": (list(config.FOOOCUS_INPAINT_PATCH.keys()),),
+                "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
+                "inpaint_engine":(list(config.FOOOCUS_INPAINT_PATCH.keys()),),
+                "top": ("BOOLEAN", {"default": False}),
+                "bottom": ("BOOLEAN", {"default": False}),
+                "left": ("BOOLEAN", {"default": False}),
+                "right": ("BOOLEAN", {"default": False}),
             },
             "optional": {
                 "image_to_latent": ("IMAGE",),
-                "latent": ("LATENT",),
+                "latent":("LATENT",),
+                "inpaint_image": ("IMAGE",),
+                "inpaint_mask": ("MASK",),
             },
         }
 
-    RETURN_TYPES = ("PIPE_LINE", "MODEL", "CLIP", "VAE",
-                    "CONDITIONING", "CONDITIONING")
-    RETURN_NAMES = ("pipe", "model", "clip", "vae",
-                    "CONDITIONING+", "CONDITIONING-")
+    RETURN_TYPES = ("PIPE_LINE", "MODEL", "CLIP", "VAE","CONDITIONING","CONDITIONING")
+    RETURN_NAMES = ("pipe", "model", "clip", "vae","CONDITIONING+","CONDITIONING-")
 
     FUNCTION = "fooocus_preKSampler"
     CATEGORY = "Fooocus"
 
-    def fooocus_preKSampler(self, pipe: dict, image_to_latent=None, latent=None,   inpaint_engine=None, **kwargs):
+    def fooocus_preKSampler(self, pipe: dict,image_to_latent=None, latent=None,inpaint_image=None, inpaint_mask=None,inpaint_engine=None, **kwargs):
         # 检查pipe非空
         assert pipe is not None, "请先调用 FooocusLoader 进行初始化！"
         pipe.update(
@@ -259,6 +260,7 @@ class FooocusPreKSampler:
         print(f'[Parameters] Seed = {pipe["seed"]}')
 
         denoising_strength = kwargs.pop("denoise")
+        inpaint_respective_field = pipe["inpaint_respective_field"]
 
         # 更新pipe参数
         steps = kwargs.get("steps")
@@ -266,21 +268,26 @@ class FooocusPreKSampler:
         base_model_additional_loras = []
         inpaint_worker.current_task = None
         use_synthetic_refiner = False
+        if inpaint_image is None:
+            pipe["generation_mode"] = "text_or_images_to_images"
+        if pipe["generation_mode"] == "inpaint":
+            pipe["top"] = False
+            pipe["bottom"] = False
+            pipe["left"] = False
+            pipe["right"] = False
+
         if (pipe["generation_mode"] == "inpaint" or pipe["generation_mode"] == "outpaint"):
-            patch_file = get_local_filepath(
-                config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
+            head_file = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
+            patch_file = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
             base_model_additional_loras += [(patch_file, 1.0)]
             if pipe["refiner_model_name"] == "None":
                 use_synthetic_refiner = True
                 refiner_switch = 0.5
         switch = int(round(steps * refiner_switch))
-        print(
-            f'[Parameters] Sampler = {pipe["sampler_name"]} - {pipe["scheduler"]}')
+        print(f'[Parameters] Sampler = {pipe["sampler_name"]} - {pipe["scheduler"]}')
         print(f'[Parameters] Steps = {steps} - {switch}')
         # 加载模型
         print('Loading models ...')
-        print(pipe["refiner_model_name"], pipe["base_model_name"],
-              pipe["optional_lora_stack"],)
         pipeline.refresh_everything(
             refiner_model_name=pipe["refiner_model_name"],
             base_model_name=pipe["base_model_name"],
@@ -302,24 +309,137 @@ class FooocusPreKSampler:
             negative_prompts, len(negative_prompts))
         if image_to_latent is not None:
             candidate_vae, _ = pipeline.get_candidate_vae(
-                steps=steps,
+                    steps=steps,
+                    switch=switch,
+                    denoise=denoising_strength,
+                    refiner_swap_method=pipe["refiner_swap_method"],
+            )
+            if isinstance(image_to_latent, list):
+                    image_to_latent = image_to_latent[0]
+                    image_to_latent = image_to_latent.unsqueeze(0)
+            initial_latent = core.encode_vae(candidate_vae, image_to_latent)
+        elif latent is not None:
+            initial_latent = latent
+        else:
+            initial_latent = pipe["latent"]
+        # 预处理latent
+        if pipe["generation_mode"] == "text_or_images_to_images":
+            print('text 2 img')
+        else:
+            inpaint_image = inpaint_image[0].numpy()
+            inpaint_image = (inpaint_image * 255).astype(np.uint8)
+            if pipe["top"] or pipe["bottom"] or pipe["left"] or pipe["right"]:
+                print("启用扩图！")
+                inpaint_mask = np.zeros(inpaint_image.shape, dtype=np.uint8)
+                inpaint_mask = inpaint_mask[:, :, 0]
+                H, W, C = inpaint_image.shape
+                if pipe["top"]:
+                    inpaint_image = np.pad(
+                        inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode="edge"
+                    )
+                    inpaint_mask = np.pad(
+                        inpaint_mask,
+                        [[int(H * 0.3), 0], [0, 0]],
+                        mode="constant",
+                        constant_values=255,
+                    )
+                if pipe["bottom"]:
+                    inpaint_image = np.pad(
+                        inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode="edge"
+                    )
+                    inpaint_mask = np.pad(
+                        inpaint_mask,
+                        [[0, int(H * 0.3)], [0, 0]],
+                        mode="constant",
+                        constant_values=255,
+                    )
+
+                H, W, C = inpaint_image.shape
+                if pipe["left"]:
+                    inpaint_image = np.pad(
+                        inpaint_image, [[0, 0], [int(H * 0.3), 0], [0, 0]], mode="edge"
+                    )
+                    inpaint_mask = np.pad(
+                        inpaint_mask,
+                        [[0, 0], [int(H * 0.3), 0]],
+                        mode="constant",
+                        constant_values=255,
+                    )
+                if pipe["right"]:
+                    inpaint_image = np.pad(
+                        inpaint_image, [[0, 0], [0, int(H * 0.3)], [0, 0]], mode="edge"
+                    )
+                    inpaint_mask = np.pad(
+                        inpaint_mask,
+                        [[0, 0], [0, int(H * 0.3)]],
+                        mode="constant",
+                        constant_values=255,
+                    )
+                inpaint_image = np.ascontiguousarray(inpaint_image.copy())
+                inpaint_mask = np.ascontiguousarray(inpaint_mask.copy())
+                denoising_strength = 1.0
+                inpaint_respective_field = 1.0
+
+            elif inpaint_mask == None:
+                raise Exception("inpaint_mask is None!!")
+            else:
+                inpaint_mask = inpaint_mask[0].numpy()
+                inpaint_mask = (inpaint_mask * 255).astype(np.uint8)
+            inpaint_worker.current_task = inpaint_worker.InpaintWorker(
+                image=inpaint_image,
+                mask=inpaint_mask,
+                use_fill=denoising_strength > 0.99,
+                k=inpaint_respective_field,
+            )
+            inpaint_pixel_fill = core.numpy_to_pytorch(
+                inpaint_worker.current_task.interested_fill
+            )
+            inpaint_pixel_image = core.numpy_to_pytorch(
+                inpaint_worker.current_task.interested_image
+            )
+            inpaint_pixel_mask = core.numpy_to_pytorch(
+                inpaint_worker.current_task.interested_mask
+            )
+            candidate_vae, candidate_vae_swap = pipeline.get_candidate_vae(
+                steps=pipe["steps"],
                 switch=switch,
                 denoise=denoising_strength,
                 refiner_swap_method=pipe["refiner_swap_method"],
             )
-            if isinstance(image_to_latent, list):
-                image_to_latent = image_to_latent[0]
-                image_to_latent = image_to_latent.unsqueeze(0)
-            initial_latent = core.encode_vae(candidate_vae, image_to_latent)
-        if latent is not None:
-            initial_latent = latent
-        else:
-            initial_latent = pipe["latent"]
+            latent_inpaint, latent_mask = core.encode_vae_inpaint(
+                mask=inpaint_pixel_mask, vae=candidate_vae, pixels=inpaint_pixel_image
+            )
+            latent_swap = None
+            if candidate_vae_swap is not None:
+                print("正在编码SD1.5局部重绘VAE……")
+                latent_swap = core.encode_vae(
+                    vae=candidate_vae_swap, pixels=inpaint_pixel_fill
+                )["samples"]
+
+            print("正在编码VAE……")
+            latent_fill = core.encode_vae(vae=candidate_vae, pixels=inpaint_pixel_fill)[
+                "samples"
+            ]
+
+            inpaint_worker.current_task.load_latent(
+                latent_fill=latent_fill,
+                latent_mask=latent_mask,
+                latent_swap=latent_swap,
+            )
+            pipeline.final_unet = inpaint_worker.current_task.patch(
+                inpaint_head_model_path=head_file,
+                inpaint_latent=latent_inpaint,
+                inpaint_latent_mask=latent_mask,
+                model=pipeline.final_unet,
+            )
+            initial_latent = {"samples": latent_fill}
+
+            final_height, final_width = inpaint_worker.current_task.image.shape[:2]
+            print(f"最终分辨率是 {str((final_height, final_width))}.")
         B, C, H, W = initial_latent["samples"].shape
         height, width = H * 8, W * 8
         print(f'[Parameters] Denoising Strength = {denoising_strength}')
-        print(
-            f'[Parameters] Initial Latent shape: Image Space {(height,width)}')
+        print(f'[Parameters] Initial Latent shape: Image Space {(height,width)}')
         pipe.update(
             {
                 "positive": positive,
@@ -327,6 +447,7 @@ class FooocusPreKSampler:
                 "denoise": denoising_strength,
                 "latent": initial_latent,
                 "model": pipeline.final_unet,
+                "inpaint_respective_field": inpaint_respective_field,
                 "height": height,
                 "width": width,
                 "switch": switch,
@@ -334,7 +455,7 @@ class FooocusPreKSampler:
         )
         new_pipe = pipe.copy()
         del pipe
-        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae, positive, negative)}
+        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae,positive,negative)}
 
 
 class FooocusKsampler:
@@ -515,6 +636,7 @@ class FooocusHirefix:
         return results
 
 
+
 class FooocusControlnet:
     @classmethod
     def INPUT_TYPES(s):
@@ -522,7 +644,7 @@ class FooocusControlnet:
             "required": {
                 "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
-                "cn_type": (config.cn_list, {"default": config.default_cn}, ),
+                "cn_type":(config.cn_list, {"default": config.default_cn}, ),
                 "cn_stop": ("FLOAT", {"default": config.default_parameters[config.default_cn][0], "min": 0.0, "max": 1.0, "step": 0.01},),
                 "cn_weight": ("FLOAT", {"default": config.default_parameters[config.default_cn][1], "min": 0.0, "max": 2.0, "step": 0.01},),
                 "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
@@ -539,25 +661,23 @@ class FooocusControlnet:
         self, pipe, image, cn_type, cn_stop, cn_weight, skip_cn_preprocess
     ):
         if cn_type == config.cn_canny:
-            cn_path = get_local_filepath(
-                config.FOOOCUS_IMAGE_PROMPT[config.cn_canny]["model_url"], config.CONTROLNET_DIR)
-            image = image[0].numpy()
-            image = (image * 255).astype(np.uint8)
-            image = resize_image(HWC3(image), pipe["width"], pipe["height"])
-            if not skip_cn_preprocess:
-                image = preprocessors.canny_pyramid(image)
-            image = HWC3(image)
-            image = core.numpy_to_pytorch(image)
+          cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[config.cn_canny]["model_url"],config.CONTROLNET_DIR)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = resize_image(HWC3(image), pipe["width"], pipe["height"])
+          if not skip_cn_preprocess:
+            image = preprocessors.canny_pyramid(image)
+          image = HWC3(image)
+          image = core.numpy_to_pytorch(image)
         if cn_type == config.cn_cpds:
-            cn_path = get_local_filepath(
-                config.FOOOCUS_IMAGE_PROMPT[config.cn_cpds]["model_url"], config.CONTROLNET_DIR)
-            image = image[0].numpy()
-            image = (image * 255).astype(np.uint8)
-            image = resize_image(HWC3(image), pipe["width"], pipe["height"])
-            if not skip_cn_preprocess:
-                image = preprocessors.cpds(image)
-            image = HWC3(image)
-            image = core.numpy_to_pytorch(image)
+          cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[config.cn_cpds]["model_url"],config.CONTROLNET_DIR)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = resize_image(HWC3(image), pipe["width"], pipe["height"])
+          if not skip_cn_preprocess:
+            image = preprocessors.cpds(image)
+          image = HWC3(image)
+          image = core.numpy_to_pytorch(image)
 
         positive_cond, negative_cond = core.apply_controlnet(
             pipe["positive"],
@@ -574,14 +694,13 @@ class FooocusControlnet:
         new_pipe["cn_negative"] = negative_cond
         return (new_pipe, image,)
 
-
 class FooocusImagePrompt:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
                 "image": ("IMAGE",),
-                "ip_type": (config.ip_list, {"default": config.default_ip}, ),
+                "ip_type":(config.ip_list, {"default": config.default_ip}, ),
                 "ip_stop": ("FLOAT", {"default": config.default_parameters[config.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
                 "ip_weight": ("FLOAT", {"default": config.default_parameters[config.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
                 "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
@@ -598,36 +717,28 @@ class FooocusImagePrompt:
         self, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
     ):
         if ip_type == config.cn_ip:
-            clip_vision_path, ip_negative_path, ip_adapter_path = config.downloading_ip_adapters(
-                'ip')
-            ip_adapter.load_ip_adapter(
-                clip_vision_path, ip_negative_path, ip_adapter_path)
-            image = image[0].numpy()
-            image = (image * 255).astype(np.uint8)
-            image = resize_image(HWC3(image), width=224,
-                                 height=224, resize_mode=0)
-            task = [image, ip_stop, ip_weight]
-            task[0] = ip_adapter.preprocess(
-                image, ip_adapter_path=ip_adapter_path)
+          clip_vision_path, ip_negative_path, ip_adapter_path = config.downloading_ip_adapters('ip')
+          ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_path)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = resize_image(HWC3(image), width=224, height=224, resize_mode=0)
+          task = [image,ip_stop,ip_weight]
+          task[0] = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_path)
         if ip_type == config.cn_ip_face:
-            clip_vision_path, ip_negative_path,  ip_adapter_face_path = config.downloading_ip_adapters(
-                'face')
-            ip_adapter.load_ip_adapter(
-                clip_vision_path, ip_negative_path, ip_adapter_face_path)
-            image = image[0].numpy()
-            image = (image * 255).astype(np.uint8)
-            image = HWC3(image)
-            if not skip_cn_preprocess:
-                image = face_crop.crop_image(image)
-            image = resize_image(image, width=224, height=224, resize_mode=0)
-            task = [image, ip_stop, ip_weight]
-            task[0] = ip_adapter.preprocess(
-                image, ip_adapter_path=ip_adapter_face_path)
+          clip_vision_path, ip_negative_path,  ip_adapter_face_path = config.downloading_ip_adapters('face')
+          ip_adapter.load_ip_adapter(clip_vision_path, ip_negative_path, ip_adapter_face_path)
+          image = image[0].numpy()
+          image = (image * 255).astype(np.uint8)
+          image = HWC3(image)
+          if not skip_cn_preprocess:
+            image = face_crop.crop_image(image)
+          image = resize_image(image, width=224, height=224, resize_mode=0)
+          task = [image,ip_stop,ip_weight]
+          task[0] = ip_adapter.preprocess(image, ip_adapter_path=ip_adapter_face_path)
         # work_model = model.clone()
         # new_model = ip_adapter.patch_model(work_model, [task])
         # return (new_model, )
         return (task, )
-
 
 class FooocusApplyImagePrompt:
     @classmethod
@@ -661,145 +772,6 @@ class FooocusApplyImagePrompt:
         new_model = ip_adapter.patch_model(work_model, image_prompt_tasks)
         return (new_model, )
 
-
-class FooocusInpaint:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "image": ("IMAGE",),
-                "mask": ("MASK",),
-                "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
-                "inpaint_engine": (list(config.FOOOCUS_INPAINT_PATCH.keys()),),
-                "top": ("BOOLEAN", {"default": False}),
-                "bottom": ("BOOLEAN", {"default": False}),
-                "left": ("BOOLEAN", {"default": False}),
-                "right": ("BOOLEAN", {"default": False}),
-            },
-        }
-
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("latent",)
-    OUTPUT_NODE = True
-    FUNCTION = "inpaint"
-    CATEGORY = "Fooocus"
-
-    def inpaint(
-        self, image, mask, top, bottom, left, right
-    ):
-        head_file = get_local_filepath(
-            config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
-        inpaint_image = image[0].numpy()
-        inpaint_image = (inpaint_image * 255).astype(np.uint8)
-        if top or bottom or left or right:
-            print("启用扩图！")
-            inpaint_mask = np.zeros(inpaint_image.shape, dtype=np.uint8)
-            inpaint_mask = inpaint_mask[:, :, 0]
-            H, W, C = inpaint_image.shape
-            if top:
-                inpaint_image = np.pad(
-                    inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode="edge"
-                )
-                inpaint_mask = np.pad(
-                    inpaint_mask,
-                    [[int(H * 0.3), 0], [0, 0]],
-                    mode="constant",
-                    constant_values=255,
-                )
-            if bottom:
-                inpaint_image = np.pad(
-                    inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode="edge"
-                )
-                inpaint_mask = np.pad(
-                    inpaint_mask,
-                    [[0, int(H * 0.3)], [0, 0]],
-                    mode="constant",
-                    constant_values=255,
-                )
-
-            H, W, C = inpaint_image.shape
-            if left:
-                inpaint_image = np.pad(
-                    inpaint_image, [[0, 0], [int(H * 0.3), 0], [0, 0]], mode="edge"
-                )
-                inpaint_mask = np.pad(
-                    inpaint_mask,
-                    [[0, 0], [int(H * 0.3), 0]],
-                    mode="constant",
-                    constant_values=255,
-                )
-            if right:
-                inpaint_image = np.pad(
-                    inpaint_image, [[0, 0], [0, int(H * 0.3)], [0, 0]], mode="edge"
-                )
-                inpaint_mask = np.pad(
-                    inpaint_mask,
-                    [[0, 0], [0, int(H * 0.3)]],
-                    mode="constant",
-                    constant_values=255,
-                )
-            inpaint_image = np.ascontiguousarray(inpaint_image.copy())
-            inpaint_mask = np.ascontiguousarray(inpaint_mask.copy())
-            denoising_strength = 1.0
-            inpaint_respective_field = 1.0
-        elif inpaint_mask == None:
-            raise Exception("inpaint_mask is None!!")
-        else:
-            inpaint_mask = mask[0].numpy()
-            inpaint_mask = (inpaint_mask * 255).astype(np.uint8)
-        inpaint_worker.current_task = inpaint_worker.InpaintWorker(
-            image=inpaint_image,
-            mask=inpaint_mask,
-            use_fill=denoising_strength > 0.99,
-            k=inpaint_respective_field,
-        )
-        inpaint_pixel_fill = core.numpy_to_pytorch(
-            inpaint_worker.current_task.interested_fill
-        )
-        inpaint_pixel_image = core.numpy_to_pytorch(
-            inpaint_worker.current_task.interested_image
-        )
-        inpaint_pixel_mask = core.numpy_to_pytorch(
-            inpaint_worker.current_task.interested_mask
-        )
-        candidate_vae, candidate_vae_swap = pipeline.get_candidate_vae(
-            steps=30,
-            switch=0.5,
-            denoise=denoising_strength,
-            refiner_swap_method=None,
-        )
-        latent_inpaint, latent_mask = core.encode_vae_inpaint(
-            mask=inpaint_pixel_mask, vae=candidate_vae, pixels=inpaint_pixel_image
-        )
-        latent_swap = None
-        if candidate_vae_swap is not None:
-            print("正在编码SD1.5局部重绘VAE……")
-            latent_swap = core.encode_vae(
-                vae=candidate_vae_swap, pixels=inpaint_pixel_fill
-            )["samples"]
-
-        print("正在编码VAE……")
-        latent_fill = core.encode_vae(vae=candidate_vae, pixels=inpaint_pixel_fill)[
-            "samples"
-        ]
-
-        inpaint_worker.current_task.load_latent(
-            latent_fill=latent_fill,
-            latent_mask=latent_mask,
-            latent_swap=latent_swap,
-        )
-        pipeline.final_unet = inpaint_worker.current_task.patch(
-            inpaint_head_model_path=head_file,
-            inpaint_latent=latent_inpaint,
-            inpaint_latent_mask=latent_mask,
-            model=pipeline.final_unet,
-        )
-        initial_latent = {"samples": latent_fill}
-        final_height, final_width = inpaint_worker.current_task.image.shape[:2]
-        print(f"最终分辨率是 {str((final_height, final_width))}.")
-        return (initial_latent, )
-
-
 NODE_CLASS_MAPPINGS = {
 
     "Fooocus Loader": FooocusLoader,
@@ -810,7 +782,8 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Controlnet": FooocusControlnet,
     "Fooocus ImagePrompt": FooocusImagePrompt,
     "Fooocus ApplyImagePrompt": FooocusApplyImagePrompt,
-    "Fooocus Inpaint": FooocusInpaint,
+
+
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
