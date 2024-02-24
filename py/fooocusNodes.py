@@ -837,7 +837,7 @@ class FooocusInpaint:
             "required": {
                 "image": ("IMAGE",),
                 "inpaint_disable_initial_latent":("BOOLEAN", {"default": False}),
-                "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0.1, "max": 1.0, "step": 0.1},),
+                "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0, "max": 1.0, "step": 0.1},),
                 "inpaint_engine":(config.inpaint_engine_versions,{"default":"v2.6"},),
                 "top": ("BOOLEAN", {"default": False}),
                 "bottom": ("BOOLEAN", {"default": False}),
