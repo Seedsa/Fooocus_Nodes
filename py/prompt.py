@@ -147,12 +147,10 @@ class FooocusStyles:
 
     #
     RETURN_TYPES = (
-        "STRING",
-        "STRING",
+        "FOOOCUS_STYLES",
     )
     RETURN_NAMES = (
-        "positive",
-        "negative",
+        "fooocus_styles",
     )
 
     CATEGORY = "Fooocus/Prompt"
@@ -220,7 +218,7 @@ class FooocusStyles:
         negative_prompt = (
             self.replace_repeat(negative_prompt) if negative_prompt else ""
         )
-        return (positive_prompt, negative_prompt,)
+        return (values,)
 
 
 # 正面提示词
