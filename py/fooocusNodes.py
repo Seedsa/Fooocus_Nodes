@@ -452,9 +452,6 @@ class FooocusPreKSampler:
                 inpaint_mask = (inpaint_mask * 255).astype(np.uint8)
                 H, W, C = inpaint_image.shape
                 inpaint_mask = resample_image(inpaint_mask, width=W, height=H)
-                inpaint_mask = np.mean(inpaint_mask, axis=2)
-                inpaint_mask = (inpaint_mask > 127).astype(np.uint8) * 255
-                inpaint_mask = np.maximum(inpaint_mask, inpaint_mask)
 
             inpaint_worker.current_task = inpaint_worker.InpaintWorker(
                 image=inpaint_image,
