@@ -213,8 +213,8 @@ class FooocusPreKSampler:
             },
         }
 
-    RETURN_TYPES = ("PIPE_LINE", "MODEL", "CLIP", "VAE")
-    RETURN_NAMES = ("pipe", "model", "clip", "vae")
+    RETURN_TYPES = ("PIPE_LINE", "MODEL", "CLIP", "VAE","CONDITIONING","CONDITIONING")
+    RETURN_NAMES = ("pipe", "model", "clip", "vae","CONDITIONING+","CONDITIONING-")
 
     FUNCTION = "fooocus_preKSampler"
     CATEGORY = "Fooocus"
@@ -453,7 +453,7 @@ class FooocusPreKSampler:
         )
         new_pipe = pipe.copy()
         del pipe
-        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae)}
+        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae,positive,negative)}
 
 
 class FooocusKsampler:
