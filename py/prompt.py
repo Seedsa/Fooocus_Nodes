@@ -134,10 +134,6 @@ class FooocusStyles:
             "required": {
                 "styles": (styles, {"default": "fooocus_styles"}),
             },
-            "optional": {
-                "positive": ("STRING", {"forceInput": True}),
-                "negative": ("STRING", {"forceInput": True}),
-            },
             "hidden": {
                 "prompt": "PROMPT",
                 "extra_pnginfo": "EXTRA_PNGINFO",
@@ -157,28 +153,16 @@ class FooocusStyles:
     FUNCTION = "run"
     OUTPUT_MODE = True
 
-    def replace_repeat(self, prompt):
-        arr = prompt.replace("，", ",").split(",")
-        if len(arr) != len(set(arr)):
-            for i in range(len(arr)):
-                arr[i] = arr[i].strip()
-            arr = list(set(arr))
-            return ", ".join(arr)
-        else:
-            return prompt
-
     def run(
         self,
         styles,
         positive="",
-        negative="",
         prompt=None,
         extra_pnginfo=None,
         my_unique_id=None,
     ):
         values = []
         all_styles = {}
-        positive_prompt, negative_prompt = "", negative
         if styles == "fooocus_styles":
             file = os.path.join(RESOURCES_DIR,  styles + '.json')
         else:
@@ -191,33 +175,6 @@ class FooocusStyles:
         if my_unique_id in prompt:
             if prompt[my_unique_id]["inputs"]["select_styles"]:
                 values = prompt[my_unique_id]["inputs"]["select_styles"].split(",")
-        has_prompt = False
-        for index, val in enumerate(values):
-            if "prompt" in all_styles[val]:
-                if "{prompt}" in all_styles[val]["prompt"] and has_prompt == False:
-                    positive_prompt = all_styles[val]["prompt"].format(prompt=positive)
-                    has_prompt = True
-                else:
-                    positive_prompt += ", " + all_styles[val]["prompt"].replace(
-                        ", {prompt}", ""
-                    ).replace("{prompt}", "")
-            if "negative_prompt" in all_styles[val]:
-                negative_prompt += (
-                    ", " + all_styles[val]["negative_prompt"]
-                    if negative_prompt
-                    else all_styles[val]["negative_prompt"]
-                )
-
-        if has_prompt == False and positive:
-            positive_prompt = positive + ", "
-
-        # 去重
-        positive_prompt = (
-            self.replace_repeat(positive_prompt) if positive_prompt else ""
-        )
-        negative_prompt = (
-            self.replace_repeat(negative_prompt) if negative_prompt else ""
-        )
         return (values,)
 
 
