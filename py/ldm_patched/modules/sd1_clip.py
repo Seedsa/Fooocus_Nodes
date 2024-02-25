@@ -6,6 +6,7 @@ import torch
 import traceback
 import zipfile
 from . import model_management
+import contextlib
 import ldm_patched.modules.clip_model
 import json
 

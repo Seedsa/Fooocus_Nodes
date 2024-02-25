@@ -29,14 +29,11 @@ folder_names_and_paths["custom_nodes"] = ([os.path.join(base_path, "custom_nodes
 
 folder_names_and_paths["hypernetworks"] = ([os.path.join(models_dir, "hypernetworks")], supported_pt_extensions)
 
-folder_names_and_paths["photomaker"] = ([os.path.join(models_dir, "photomaker")], supported_pt_extensions)
-
 folder_names_and_paths["classifiers"] = ([os.path.join(models_dir, "classifiers")], {""})
 
 output_directory = os.path.join(os.getcwd(), "output")
 temp_directory = os.path.join(os.getcwd(), "temp")
 input_directory = os.path.join(os.getcwd(), "input")
-user_directory = os.path.join(os.getcwd(), "user")
 
 filename_list_cache = {}
 
@@ -140,27 +137,15 @@ def recursive_search(directory, excluded_dir_names=None):
         excluded_dir_names = []
 
     result = []
-    dirs = {}
-
-    # Attempt to add the initial directory to dirs with error handling
-    try:
-        dirs[directory] = os.path.getmtime(directory)
-    except FileNotFoundError:
-        print(f"Warning: Unable to access {directory}. Skipping this path.")
-        
+    dirs = {directory: os.path.getmtime(directory)}
     for dirpath, subdirs, filenames in os.walk(directory, followlinks=True, topdown=True):
         subdirs[:] = [d for d in subdirs if d not in excluded_dir_names]
         for file_name in filenames:
             relative_path = os.path.relpath(os.path.join(dirpath, file_name), directory)
             result.append(relative_path)
-        
         for d in subdirs:
             path = os.path.join(dirpath, d)
-            try:
-                dirs[path] = os.path.getmtime(path)
-            except FileNotFoundError:
-                print(f"Warning: Unable to access {path}. Skipping this path.")
-                continue
+            dirs[path] = os.path.getmtime(path)
     return result, dirs
 
 def filter_files_extensions(files, extensions):
