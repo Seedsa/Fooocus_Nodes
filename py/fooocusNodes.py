@@ -202,6 +202,7 @@ class FooocusPreKSampler:
                 "adm_scaler_negative": ("FLOAT", {"default": 0.8, "min": 0.0, "max": 3.0, "step": 0.1},),
                 "adm_scaler_end": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.1},),
                 "controlnet_softness": ("FLOAT", {"default": 0.25, "min": 0.0, "max": 1.0, "step": 0.01},),
+                "freeu_enabled": ("BOOLEAN", {"default": False},),
             },
             "optional": {
                 "image_to_latent": ("IMAGE",),
@@ -238,10 +239,12 @@ class FooocusPreKSampler:
         image_seed =  kwargs.get("seed")
         sharpness = kwargs.get('sharpness')
         guidance_scale = kwargs.get("cfg")
+        freeu_enabled = kwargs.get("freeu_enabled")
         base_model_name =pipe["base_model_name"]
         refiner_model_name = pipe["refiner_model_name"]
         refiner_switch = pipe["refiner_switch"]
         loras = pipe["optional_lora_stack"]
+        outpaint_selections=[]
         base_model_additional_loras = []
 
         if fooocus_expansion in style_selections:
@@ -306,8 +309,21 @@ class FooocusPreKSampler:
         inpaint_parameterized = False
         if fooocus_inpaint is not None:
             inpaint_engine = fooocus_inpaint.get("inpaint_engine")
+            top=fooocus_inpaint.get("top")
+            bottom=fooocus_inpaint.get("bottom")
+            left=fooocus_inpaint.get("left")
+            right=fooocus_inpaint.get("right")
+            if top is not None:
+                outpaint_selections.append('top')
+            if bottom is not None:
+                outpaint_selections.append('bottom')
+            if left is not None:
+                outpaint_selections.append('left')
+            if right is not None:
+                outpaint_selections.append('right')
             if inpaint_engine != 'None':
-              inpaint_parameterized = True
+               inpaint_parameterized = True
+
         inpaint_image = None
         inpaint_mask = None
         inpaint_head_model_path = None
@@ -324,24 +340,27 @@ class FooocusPreKSampler:
 
         if fooocus_inpaint is not None:
             inpaint_image = fooocus_inpaint.get("image")
-            inpaint_mask =  fooocus_inpaint.get("mask")
+            inpaint_image = inpaint_image[0].numpy()
+            inpaint_image = (inpaint_image * 255).astype(np.uint8)
+
+            inpaint_mask = fooocus_inpaint.get("mask")
+            if inpaint_mask is not None:
+                inpaint_mask = inpaint_mask[0].numpy()
+                inpaint_mask = (inpaint_mask * 255).astype(np.uint8)
             inpaint_engine = fooocus_inpaint.get("inpaint_engine")
             inpaint_disable_initial_latent = fooocus_inpaint.get("inpaint_disable_initial_latent")
             inpaint_respective_field = fooocus_inpaint.get("inpaint_respective_field")
 
-            inpaint_image = inpaint_image[0].numpy()
-            inpaint_image = (inpaint_image * 255).astype(np.uint8)
             inpaint_image = HWC3(inpaint_image)
-
             if inpaint_parameterized:
-              print('Downloading inpainter ...')
-              inpaint_head_model_path = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
-              inpaint_patch_model_path = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
-              base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
-              print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
-              if refiner_model_name == "None":
-                  use_synthetic_refiner = True
-                  refiner_switch = 0.5
+                print('Downloading inpainter ...')
+                inpaint_head_model_path = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
+                inpaint_patch_model_path = get_local_filepath(config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
+                base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+                print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
+                if refiner_model_name == "None":
+                    use_synthetic_refiner = True
+                    refiner_switch = 0.5
             else:
                 inpaint_head_model_path, inpaint_patch_model_path = None, None
                 print(f'[Inpaint] Parameterized inpaint is disabled.')
@@ -380,6 +399,7 @@ class FooocusPreKSampler:
               base_model_additional_loras=base_model_additional_loras,
               use_synthetic_refiner=use_synthetic_refiner,
           )
+
           log_node_info('Processing prompts ...')
           tasks = []
           for i in range(image_number):
@@ -462,67 +482,32 @@ class FooocusPreKSampler:
             initial_latent = latent
 
         if 'inpaint' in goals:
-            top=fooocus_inpaint.get("top")
-            bottom=fooocus_inpaint.get("bottom")
-            left=fooocus_inpaint.get("left")
-            right=fooocus_inpaint.get("right")
-            if top or bottom or left or right:
-                print("启用扩图！")
+            if len(outpaint_selections) > 0:
                 inpaint_mask = np.zeros(inpaint_image.shape, dtype=np.uint8)
                 inpaint_mask = inpaint_mask[:, :, 0]
                 H, W, C = inpaint_image.shape
-                if top:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode="edge"
-                    )
-                    inpaint_mask = np.pad(
-                        inpaint_mask,
-                        [[int(H * 0.3), 0], [0, 0]],
-                        mode="constant",
-                        constant_values=255,
-                    )
-                if bottom:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode="edge"
-                    )
-                    inpaint_mask = np.pad(
-                        inpaint_mask,
-                        [[0, int(H * 0.3)], [0, 0]],
-                        mode="constant",
-                        constant_values=255,
-                    )
+                if 'top' in outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[int(H * 0.3), 0], [0, 0]], mode='constant',
+                                          constant_values=255)
+                if 'bottom' in outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, int(H * 0.3)], [0, 0]], mode='constant',
+                                          constant_values=255)
 
                 H, W, C = inpaint_image.shape
-                if left:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[0, 0], [int(H * 0.3), 0], [0, 0]], mode="edge"
-                    )
-                    inpaint_mask = np.pad(
-                        inpaint_mask,
-                        [[0, 0], [int(H * 0.3), 0]],
-                        mode="constant",
-                        constant_values=255,
-                    )
-                if right:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[0, 0], [0, int(H * 0.3)], [0, 0]], mode="edge"
-                    )
-                    inpaint_mask = np.pad(
-                        inpaint_mask,
-                        [[0, 0], [0, int(H * 0.3)]],
-                        mode="constant",
-                        constant_values=255,
-                    )
+                if 'left' in outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[0, 0], [int(H * 0.3), 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [int(H * 0.3), 0]], mode='constant',
+                                          constant_values=255)
+                if 'right' in outpaint_selections:
+                    inpaint_image = np.pad(inpaint_image, [[0, 0], [0, int(H * 0.3)], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [0, int(H * 0.3)]], mode='constant',
+                                          constant_values=255)
                 inpaint_image = np.ascontiguousarray(inpaint_image.copy())
                 inpaint_mask = np.ascontiguousarray(inpaint_mask.copy())
                 denoising_strength = 1.0
                 inpaint_respective_field = 1.0
-
-            elif inpaint_mask == None:
-                raise Exception("inpaint_mask is None!!")
-            else:
-                inpaint_mask = inpaint_mask[0].numpy()
-                inpaint_mask = (inpaint_mask * 255).astype(np.uint8)
 
             inpaint_worker.current_task = inpaint_worker.InpaintWorker(
                 image=inpaint_image,
@@ -585,7 +570,18 @@ class FooocusPreKSampler:
             final_height, final_width = inpaint_worker.current_task.image.shape[:2]
             print(f'Final resolution is {str((final_height, final_width))}, latent is {str((height, width))}.')
 
+        if freeu_enabled:
+            print(f'FreeU is enabled!')
+            pipeline.final_unet = core.apply_freeu(
+                pipeline.final_unet,
+                1.01,
+                1.02,
+                0.99,
+                0.95
+            )
+
         print(f'[Parameters] Denoising Strength = {denoising_strength}')
+
         if isinstance(initial_latent, dict) and 'samples' in initial_latent:
             log_shape = initial_latent['samples'].shape
         else:
@@ -627,8 +623,8 @@ class FooocusPreKSampler:
                 "denoise": denoising_strength,
                 "latent": initial_latent,
                 "model": pipeline.final_unet,
-                "height": height,
-                "width": width,
+                "latent_height": height,
+                "latent_width": width,
                 "switch": switch,
             }
         )
@@ -663,6 +659,14 @@ class FooocusKsampler:
         if model is not None:
             pipeline.final_unet = model
         all_imgs = []
+        all_steps = pipe["steps"] * len(pipe["tasks"])
+        pbar = comfy.utils.ProgressBar(all_steps)
+
+        def callback(step, x0, x, total_steps, y):
+            preview_bytes = None
+            # done_steps = current_task_id * pipe["steps"] + step
+            pbar.update_absolute(step + 1, total_steps, preview_bytes)
+
         for current_task_id, task in enumerate(pipe["tasks"]):
             try:
                 print(f"正在生成第 {current_task_id + 1} 张图像……")
@@ -681,7 +685,7 @@ class FooocusKsampler:
                   width=pipe["latent_width"],
                   height=pipe["latent_height"],
                   image_seed=task['task_seed'],
-                  callback=None,
+                  callback=callback,
                   sampler_name=pipe["sampler_name"],
                   scheduler_name=pipe["scheduler"],
                   latent=pipe["latent"],
