@@ -35,7 +35,6 @@ BASE_RESOLUTIONS = [
 INPAINT_DIR = os.path.join(folder_paths.models_dir, "inpaint")
 CONTROLNET_DIR = os.path.join(folder_paths.models_dir, "controlnet")
 CLIP_VISION_DIR = os.path.join(folder_paths.models_dir, "clip_vision")
-RESOURCES_DIR = os.path.join(Path(__file__).parent.parent.parent, "resources")
 FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "styles")
 
 inpaint_engine_versions = ['None', 'v1', 'v2.5', 'v2.6']

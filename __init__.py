@@ -21,17 +21,6 @@ for module_name in node_list:
 
 
 
-#Styles
-styles_path = os.path.join(os.path.dirname(__file__), "styles")
-samples_path = os.path.join(os.path.dirname(__file__), "styles", "samples")
-if os.path.exists(styles_path):
-    if not os.path.exists(samples_path):
-        os.mkdir(samples_path)
-else:
-    os.mkdir(styles_path)
-    os.mkdir(samples_path)
-
-
 WEB_DIRECTORY = "./web"
 
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', "WEB_DIRECTORY"]
