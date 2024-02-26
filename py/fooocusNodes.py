@@ -249,11 +249,14 @@ class FooocusPreKSampler:
 
         if fooocus_expansion in style_selections:
             use_expansion = True
-            style_selections.remove(fooocus_expansion)
         else:
             use_expansion = False
 
-        use_style = len(style_selections) > 0
+        if use_expansion:
+            use_style = len(style_selections) > 1
+        else:
+            use_style = len(style_selections) > 0
+
 
         if base_model_name == refiner_model_name:
             print(f'Refiner disabled because base model and refiner are same.')
@@ -382,8 +385,8 @@ class FooocusPreKSampler:
 
 
           if prompt == '':
-                  # disable expansion when empty since it is not meaningful and influences image prompt
-                  use_expansion = False
+              # disable expansion when empty since it is not meaningful and influences image prompt
+              use_expansion = False
 
           extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
           extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
@@ -419,6 +422,8 @@ class FooocusPreKSampler:
 
               if use_style:
                   for s in style_selections:
+                      if s == fooocus_expansion:
+                        continue
                       p, n = apply_style(s, positive=task_prompt)
                       positive_basic_workloads = positive_basic_workloads + p
                       negative_basic_workloads = negative_basic_workloads + n
