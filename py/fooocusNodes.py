@@ -313,13 +313,13 @@ class FooocusPreKSampler:
             bottom=fooocus_inpaint.get("bottom")
             left=fooocus_inpaint.get("left")
             right=fooocus_inpaint.get("right")
-            if top is not None:
+            if top is not None and top is True:
                 outpaint_selections.append('top')
-            if bottom is not None:
+            if bottom is not None and bottom is True:
                 outpaint_selections.append('bottom')
-            if left is not None:
+            if left is not None and left is True:
                 outpaint_selections.append('left')
-            if right is not None:
+            if right is not None and right is True:
                 outpaint_selections.append('right')
             if inpaint_engine != 'None':
                inpaint_parameterized = True
