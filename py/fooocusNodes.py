@@ -697,7 +697,6 @@ class FooocusKsampler:
                   cfg_scale=pipe["cfg"],
                   refiner_swap_method=pipe["refiner_swap_method"],
                 )
-                del task['c'], task['uc'], positive_cond, negative_cond  # Save memory
 
                 if inpaint_worker.current_task is not None:
                     imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
@@ -752,6 +751,13 @@ class FooocusUpscale:
 
     def FooocusUpscale(self, pipe, image, upscale, denoise,fast, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
         all_imgs = []
+        all_steps = pipe["steps"] * len(image)
+        pbar = comfy.utils.ProgressBar(all_steps)
+
+        def callback(step, x0, x, total_steps, y):
+            preview_bytes = None
+            pbar.update_absolute(step + 1, total_steps, preview_bytes)
+
         for image_id, img in enumerate(image):
             print(f'upscale image #{image_id+1} ...')
             img = img.unsqueeze(0)
@@ -782,6 +788,8 @@ class FooocusUpscale:
                       'Usually directly return SR image at 4K resolution '
                       'yields better results than SDXL diffusion.')
                 direct_return = True
+            elif pipe is None:
+                direct_return = True
             else:
                 direct_return = False
 
@@ -808,15 +816,23 @@ class FooocusUpscale:
             height = H * 8
             print(f'Final resolution is {str((height, width))}.')
 
+            if pipe['tasks'] is not None and len(pipe['tasks']) == len(image):
+                task = pipe["tasks"][image_id]
+                positive_cond, negative_cond = task['c'], task['uc']
+                print('use pipe tasks cond')
+            else:
+                positive_cond = pipe["positive"]
+                negative_cond = pipe["negative"]
+
             imgs = pipeline.process_diffusion(
-                positive_cond=pipe["positive"],
-                negative_cond=pipe["negative"],
+                positive_cond=positive_cond,
+                negative_cond=negative_cond,
                 steps=steps,
                 switch=pipe["switch"],
                 width=pipe["latent_width"],
                 height=pipe["latent_height"],
                 image_seed=pipe["seed"],
-                callback=None,
+                callback=callback,
                 sampler_name=pipe["sampler_name"],
                 scheduler_name=pipe["scheduler"],
                 latent=initial_latent,
