@@ -923,10 +923,10 @@ class FooocusApplyImagePrompt:
                 "model": ("MODEL",),
             },
             "optional": {
-                "image_prompt_a": ("IMAGE_PROMPT",),
-                "image_prompt_b": ("IMAGE_PROMPT",),
-                "image_prompt_c": ("IMAGE_PROMPT",),
-                "image_prompt_d": ("IMAGE_PROMPT",),
+                "image_prompt_1": ("IMAGE_PROMPT",),
+                "image_prompt_2": ("IMAGE_PROMPT",),
+                "image_prompt_3": ("IMAGE_PROMPT",),
+                "image_prompt_4": ("IMAGE_PROMPT",),
             },
         }
     RETURN_TYPES = ("MODEL",)
@@ -936,13 +936,17 @@ class FooocusApplyImagePrompt:
     CATEGORY = "Fooocus"
 
     def apply_image_prompt(
-        self, model, image_prompt_a=None, image_prompt_b=None, image_prompt_c=None, image_prompt_d=None
+        self, model, image_prompt_1=None, image_prompt_2=None, image_prompt_3=None, image_prompt_4=None
     ):
         image_prompt_tasks = []
-        if image_prompt_a:
-            image_prompt_tasks.append(image_prompt_a)
-        if image_prompt_b:
-            image_prompt_tasks.append(image_prompt_b)
+        if image_prompt_1:
+            image_prompt_tasks.append(image_prompt_1)
+        if image_prompt_2:
+            image_prompt_tasks.append(image_prompt_2)
+        if image_prompt_3:
+            image_prompt_tasks.append(image_prompt_3)
+        if image_prompt_4:
+            image_prompt_tasks.append(image_prompt_4)
         work_model = model.clone()
         new_model = ip_adapter.patch_model(work_model, image_prompt_tasks)
         return (new_model, )
