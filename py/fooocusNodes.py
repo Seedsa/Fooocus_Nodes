@@ -615,11 +615,11 @@ class FooocusPreKSampler:
         pipe.update(
             {
                 "tasks":tasks,
-                "positive": prompt,
+                "positive": positive,
                 "seed":seed,
                 "sampler_name":final_sampler_name,
                 "scheduler_name":final_scheduler_name,
-                "negative": negative_prompt,
+                "negative": negative,
                 "denoise": denoising_strength,
                 "latent": initial_latent,
                 "model": pipeline.final_unet,
