@@ -747,81 +747,81 @@ class FooocusHirefix:
     CATEGORY = "Fooocus"
 
     def fooocusHirefix(self, pipe, image, upscale, denoise, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
-        if isinstance(image, list):
-            image = image[0]
-            image = image.unsqueeze(0)
+        all_imgs = []
+        for image_id, img in enumerate(image):
+            print(f'hires fix image #{image_id+1} ...')
+            img = img[0].numpy()
+            img = (img * 255).astype(np.uint8)
+            img = HWC3(img)
+            H, W, C = img.shape
+            print(f'放大中的图片来自于 {str((H, W))} ...')
+            if isinstance(img, list):
+                img = np.array(img)
+            uov_input_image = perform_upscale(img)
+            print(f'图片已放大。')
+            f = upscale
+            shape_ceil = get_shape_ceil(H * f, W * f)
+            if shape_ceil < 1024:
+                print(f'[放大] 图像因尺寸过小已被重新调整。')
+                uov_input_image = set_image_shape_ceil(uov_input_image, 1024)
+                shape_ceil = 1024
+            else:
+                uov_input_image = resample_image(
+                    uov_input_image, width=W * f, height=H * f)
+            initial_pixels = core.numpy_to_pytorch(uov_input_image)
+            candidate_vae, _ = pipeline.get_candidate_vae(
+                steps=pipe["steps"],
+                switch=pipe["switch"],
+                denoise=denoise,
+                refiner_swap_method=pipe["refiner_swap_method"]
+            )
 
-        image = image[0].numpy()
-        image = (image * 255).astype(np.uint8)
-        image = HWC3(image)
-        H, W, C = image.shape
-        print(f'放大中的图片来自于 {str((H, W))} ...')
-        if isinstance(image, list):
-            image = np.array(image)
-        uov_input_image = perform_upscale(image)
-        print(f'图片已放大。')
-        f = upscale
-        shape_ceil = get_shape_ceil(H * f, W * f)
-        if shape_ceil < 1024:
-            print(f'[放大] 图像因尺寸过小已被重新调整。')
-            uov_input_image = set_image_shape_ceil(uov_input_image, 1024)
-            shape_ceil = 1024
-        else:
-            uov_input_image = resample_image(
-                uov_input_image, width=W * f, height=H * f)
-        initial_pixels = core.numpy_to_pytorch(uov_input_image)
-        candidate_vae, _ = pipeline.get_candidate_vae(
-            steps=pipe["steps"],
-            switch=pipe["switch"],
-            denoise=denoise,
-            refiner_swap_method=pipe["refiner_swap_method"]
-        )
+            initial_latent = core.encode_vae(
+                vae=candidate_vae,
+                pixels=initial_pixels, tiled=True)
+            B, C, H, W = initial_latent['samples'].shape
+            width = W * 8
+            height = H * 8
+            print(f'最终解决方案是 {str((height, width))}.')
 
-        initial_latent = core.encode_vae(
-            vae=candidate_vae,
-            pixels=initial_pixels, tiled=True)
-        B, C, H, W = initial_latent['samples'].shape
-        width = W * 8
-        height = H * 8
-        print(f'最终解决方案是 {str((height, width))}.')
+            imgs = pipeline.process_diffusion(
+                positive_cond=pipe["positive"],
+                negative_cond=pipe["negative"],
+                steps=steps,
+                switch=pipe["switch"],
+                width=pipe["latent_width"],
+                height=pipe["latent_height"],
+                image_seed=pipe["seed"],
+                callback=None,
+                sampler_name=pipe["sampler_name"],
+                scheduler_name=pipe["scheduler"],
+                latent=initial_latent,
+                denoise=denoise,
+                tiled=True,
+                cfg_scale=pipe["cfg"],
+                refiner_swap_method=pipe["refiner_swap_method"],
+            )
 
-        imgs = pipeline.process_diffusion(
-            positive_cond=pipe["positive"],
-            negative_cond=pipe["negative"],
-            steps=steps,
-            switch=pipe["switch"],
-            width=pipe["latent_width"],
-            height=pipe["latent_height"],
-            image_seed=pipe["seed"],
-            callback=None,
-            sampler_name=pipe["sampler_name"],
-            scheduler_name=pipe["scheduler"],
-            latent=initial_latent,
-            denoise=denoise,
-            tiled=True,
-            cfg_scale=pipe["cfg"],
-            refiner_swap_method=pipe["refiner_swap_method"],
-        )
+            if inpaint_worker.current_task is not None:
+                imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
 
-        if inpaint_worker.current_task is not None:
-            imgs = [inpaint_worker.current_task.post_process(x) for x in imgs]
-
-        imgs = [np.array(img).astype(np.float32) / 255.0 for img in imgs]
-        imgs = [torch.from_numpy(img) for img in imgs]
+            imgs = [np.array(img).astype(np.float32) / 255.0 for img in imgs]
+            imgs = [torch.from_numpy(img) for img in imgs]
+            all_imgs.extend(imgs)
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
-                imgs, save_prefix, prompt, extra_pnginfo)
+                    all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Preview":
             previewimage = PreviewImage()
             results = previewimage.save_images(
-                imgs, save_prefix, prompt, extra_pnginfo)
+                    all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (pipe, imgs)}
+            return {"ui": {"value": list()}, "result": (pipe, all_imgs)}
 
-        results["result"] = pipe, imgs
+        results["result"] = pipe, all_imgs
         return results
 
 
