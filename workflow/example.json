@@ -5,10 +5,7 @@
     {
       "id": 34,
       "type": "Fooocus LoraStack",
-      "pos": [
-        1690,
-        -350
-      ],
+      "pos": [1690, -350],
       "size": {
         "0": 380,
         "1": 180
@@ -28,9 +25,7 @@
         {
           "name": "lora_stack",
           "type": "LORA_STACK",
-          "links": [
-            106
-          ],
+          "links": [106],
           "shape": 3,
           "label": "lora_stack",
           "slot_index": 0
@@ -67,10 +62,7 @@
     {
       "id": 1,
       "type": "Fooocus positive",
-      "pos": [
-        1670,
-        -90
-      ],
+      "pos": [1670, -90],
       "size": {
         "0": 400,
         "1": 200
@@ -82,9 +74,7 @@
         {
           "name": "positive",
           "type": "STRING",
-          "links": [
-            45
-          ],
+          "links": [45],
           "shape": 3,
           "slot_index": 0,
           "label": "positive"
@@ -93,18 +83,13 @@
       "properties": {
         "Node name for S&R": "Fooocus positive"
       },
-      "widgets_values": [
-        "1girl with a chinese dragon,"
-      ],
+      "widgets_values": ["1girl with a chinese dragon,"],
       "color": "#346434"
     },
     {
       "id": 4,
       "type": "Fooocus PreKSampler",
-      "pos": [
-        2790,
-        -40
-      ],
+      "pos": [2790, -40],
       "size": {
         "0": 320,
         "1": 290
@@ -138,9 +123,7 @@
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "links": [
-            174
-          ],
+          "links": [174],
           "shape": 3,
           "slot_index": 0,
           "label": "pipe"
@@ -195,10 +178,7 @@
     {
       "id": 73,
       "type": "Fooocus KSampler",
-      "pos": [
-        3170,
-        -20
-      ],
+      "pos": [3170, -20],
       "size": {
         "0": 320,
         "1": 290
@@ -222,18 +202,14 @@
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "links": [
-            182
-          ],
+          "links": [182],
           "shape": 3,
           "slot_index": 0
         },
         {
           "name": "image",
           "type": "IMAGE",
-          "links": [
-            181
-          ],
+          "links": [181],
           "shape": 3,
           "slot_index": 1
         }
@@ -241,18 +217,12 @@
       "properties": {
         "Node name for S&R": "Fooocus KSampler"
       },
-      "widgets_values": [
-        "Preview",
-        "ComfyUI"
-      ]
+      "widgets_values": ["Preview", "ComfyUI"]
     },
     {
       "id": 23,
       "type": "Fooocus Loader",
-      "pos": [
-        2270,
-        -40
-      ],
+      "pos": [2270, -40],
       "size": {
         "0": 390,
         "1": 340
@@ -292,9 +262,7 @@
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "links": [
-            44
-          ],
+          "links": [44],
           "shape": 3,
           "slot_index": 0,
           "label": "pipe"
@@ -322,10 +290,7 @@
     {
       "id": 2,
       "type": "Fooocus negative",
-      "pos": [
-        1670,
-        160
-      ],
+      "pos": [1670, 160],
       "size": {
         "0": 400,
         "1": 200
@@ -337,9 +302,7 @@
         {
           "name": "negative",
           "type": "STRING",
-          "links": [
-            46
-          ],
+          "links": [46],
           "shape": 3,
           "slot_index": 0,
           "label": "negative"
@@ -355,15 +318,9 @@
     },
     {
       "id": 91,
-      "type": "Fooocus Hirefix",
-      "pos": [
-        3540,
-        -10
-      ],
-      "size": [
-        320,
-        360
-      ],
+      "type": "Fooocus Upscale",
+      "pos": [3540, -10],
+      "size": [320, 360],
       "flags": {},
       "order": 6,
       "mode": 0,
@@ -394,74 +351,19 @@
         }
       ],
       "properties": {
-        "Node name for S&R": "Fooocus Hirefix"
+        "Node name for S&R": "Fooocus Upscale"
       },
-      "widgets_values": [
-        1.5,
-        18,
-        0.382,
-        "Preview",
-        "ComfyUI"
-      ]
+      "widgets_values": [1.5, 18, 0.382, "Preview", "ComfyUI"]
     }
   ],
   "links": [
-    [
-      44,
-      23,
-      0,
-      4,
-      0,
-      "PIPE_LINE"
-    ],
-    [
-      45,
-      1,
-      0,
-      23,
-      1,
-      "STRING"
-    ],
-    [
-      46,
-      2,
-      0,
-      23,
-      2,
-      "STRING"
-    ],
-    [
-      106,
-      34,
-      0,
-      23,
-      0,
-      "LORA_STACK"
-    ],
-    [
-      174,
-      4,
-      0,
-      73,
-      0,
-      "PIPE_LINE"
-    ],
-    [
-      181,
-      73,
-      1,
-      91,
-      1,
-      "IMAGE"
-    ],
-    [
-      182,
-      73,
-      0,
-      91,
-      0,
-      "PIPE_LINE"
-    ]
+    [44, 23, 0, 4, 0, "PIPE_LINE"],
+    [45, 1, 0, 23, 1, "STRING"],
+    [46, 2, 0, 23, 2, "STRING"],
+    [106, 34, 0, 23, 0, "LORA_STACK"],
+    [174, 4, 0, 73, 0, "PIPE_LINE"],
+    [181, 73, 1, 91, 1, "IMAGE"],
+    [182, 73, 0, 91, 0, "PIPE_LINE"]
   ],
   "groups": [],
   "config": {},

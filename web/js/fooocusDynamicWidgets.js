@@ -174,7 +174,7 @@ app.registerExtension({
       case "Fooocus Loader":
       case "Fooocus KSampler":
       case "Fooocus PreKSampler":
-      case "Fooocus Hirefix":
+      case "Fooocus Upscale":
         getSetters(node);
         break;
     }

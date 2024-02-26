@@ -379,10 +379,7 @@ class FooocusPreKSampler:
           prompt = prompts[0]
           negative_prompt = negative_prompts[0]
 
-          # for node output
-          positive = pipeline.clip_encode(prompts, len(prompts))
-          negative = pipeline.clip_encode(
-              negative_prompts, len(negative_prompts))
+
 
           if prompt == '':
                   # disable expansion when empty since it is not meaningful and influences image prompt
@@ -401,6 +398,12 @@ class FooocusPreKSampler:
           )
 
           log_node_info('Processing prompts ...')
+
+          # for node output
+          positive = pipeline.clip_encode(prompts, len(prompts))
+          negative = pipeline.clip_encode(
+              negative_prompts, len(negative_prompts))
+
           tasks = []
           for i in range(image_number):
               task_seed = (seed + i) % (MAX_SEED + 1)  # randint is inclusive, % is not
@@ -722,7 +725,7 @@ class FooocusKsampler:
         return results
 
 
-class FooocusHirefix:
+class FooocusUpscale:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -732,6 +735,7 @@ class FooocusHirefix:
                 "upscale": ([1.5, 2.0], {"default": 1.5, }),
                 "steps": ("INT", {"default": 18, "min": 10, "max": 100}),
                 "denoise": ("FLOAT", {"default": 0.382, "min": 0.00, "max": 1.00, "step": 0.001},),
+                "fast":("BOOLEAN",{"default":False}),
                 "image_output": (["Hide", "Preview", "Save", "Hide/Save",], {"default": "Preview"},),
                 "save_prefix": ("STRING", {"default": "ComfyUI"}),
             },
@@ -743,32 +747,52 @@ class FooocusHirefix:
     RETURN_TYPES = ("PIPE_LINE", "IMAGE")
     RETURN_NAMES = ("pipe", "image")
     OUTPUT_NODE = True
-    FUNCTION = "fooocusHirefix"
+    FUNCTION = "FooocusUpscale"
     CATEGORY = "Fooocus"
 
-    def fooocusHirefix(self, pipe, image, upscale, denoise, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
+    def FooocusUpscale(self, pipe, image, upscale, denoise,fast, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
         all_imgs = []
         for image_id, img in enumerate(image):
-            print(f'hires fix image #{image_id+1} ...')
+            print(f'upscale image #{image_id+1} ...')
+            img = img.unsqueeze(0)
             img = img[0].numpy()
             img = (img * 255).astype(np.uint8)
             img = HWC3(img)
             H, W, C = img.shape
-            print(f'放大中的图片来自于 {str((H, W))} ...')
+            log_node_info(f'Upscaling image from {str((H, W))} ...')
             if isinstance(img, list):
                 img = np.array(img)
+
             uov_input_image = perform_upscale(img)
-            print(f'图片已放大。')
+            print(f'Image upscaled.')
             f = upscale
             shape_ceil = get_shape_ceil(H * f, W * f)
             if shape_ceil < 1024:
-                print(f'[放大] 图像因尺寸过小已被重新调整。')
+                print(f'[Upscale] Image is resized because it is too small.')
                 uov_input_image = set_image_shape_ceil(uov_input_image, 1024)
                 shape_ceil = 1024
             else:
                 uov_input_image = resample_image(
                     uov_input_image, width=W * f, height=H * f)
+            image_is_super_large = shape_ceil > 2800
+            if fast:
+                direct_return = True
+            elif image_is_super_large:
+                print('Image is too large. Directly returned the SR image. '
+                      'Usually directly return SR image at 4K resolution '
+                      'yields better results than SDXL diffusion.')
+                direct_return = True
+            else:
+                direct_return = False
+
+            if direct_return:
+                print('upscaled image direct_return')
+                uov_input_image = core.numpy_to_pytorch(uov_input_image)
+                all_imgs.extend(uov_input_image)
+                continue
+
             initial_pixels = core.numpy_to_pytorch(uov_input_image)
+            log_node_info('VAE encoding ...')
             candidate_vae, _ = pipeline.get_candidate_vae(
                 steps=pipe["steps"],
                 switch=pipe["switch"],
@@ -782,7 +806,7 @@ class FooocusHirefix:
             B, C, H, W = initial_latent['samples'].shape
             width = W * 8
             height = H * 8
-            print(f'最终解决方案是 {str((height, width))}.')
+            print(f'Final resolution is {str((height, width))}.')
 
             imgs = pipeline.process_diffusion(
                 positive_cond=pipe["positive"],
@@ -996,7 +1020,7 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Loader": FooocusLoader,
     "Fooocus PreKSampler": FooocusPreKSampler,
     "Fooocus KSampler": FooocusKsampler,
-    "Fooocus Hirefix": FooocusHirefix,
+    "Fooocus Upscale": FooocusUpscale,
     "Fooocus LoraStack": FooocusLoraStack,
     "Fooocus Controlnet": FooocusControlnet,
     "Fooocus ImagePrompt": FooocusImagePrompt,
