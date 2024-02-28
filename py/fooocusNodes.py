@@ -737,7 +737,7 @@ class FooocusUpscale:
                 "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
                 "upscale": ([1.5, 2.0], {"default": 1.5, }),
-                "steps": ("INT", {"default": 18, "min": 10, "max": 100}),
+                "steps": ("INT", {"default": 18, "min": 1, "max": 100}),
                 "denoise": ("FLOAT", {"default": 0.382, "min": 0.00, "max": 1.00, "step": 0.001},),
                 "fast":("BOOLEAN",{"default":False}),
                 "image_output": (["Hide", "Preview", "Save", "Hide/Save",], {"default": "Preview"},),
