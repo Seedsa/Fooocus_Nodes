@@ -119,3 +119,4 @@ def downloading_ip_adapters(v):
         results += [os.path.join(CONTROLNET_DIR, 'ip-adapter-plus-face_sdxl_vit-h.bin')]
 
     return results
+
