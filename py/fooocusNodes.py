@@ -11,7 +11,7 @@ import config as config
 import modules.default_pipeline as pipeline
 import modules.core as core
 from modules.sdxl_styles import apply_style,apply_wildcards,fooocus_expansion
-from extras.expansion import FooocusExpansion
+import modules.advanced_parameters as advanced_parameters
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
 import modules.flags as flags
@@ -280,7 +280,7 @@ class FooocusPreKSampler:
             modules.patch.negative_adm_scale = 1, 0
             modules.patch.adm_scaler_end = 0.0
 
-        config.controlnet_softness = kwargs.pop("controlnet_softness")
+        advanced_parameters.controlnet_softness = kwargs.pop("controlnet_softness")
 
         modules.patch.adaptive_cfg = kwargs.pop("adaptive_cfg")
         print(f'[Parameters] Adaptive CFG = {modules.patch.adaptive_cfg}')

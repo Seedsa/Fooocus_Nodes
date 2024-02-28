@@ -80,7 +80,6 @@ default_parameters = {
     cn_ip: (0.5, 0.6), cn_ip_face: (0.9, 0.75), cn_canny: (0.5, 1.0), cn_cpds: (0.5, 1.0)
 }  # stop, weight
 
-controlnet_softness=0.25
 path_fooocus_expansion = folder_paths.models_dir+"/prompt_expansion/fooocus_expansion"
 
 
