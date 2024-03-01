@@ -1,21 +1,43 @@
-﻿
-# ComfyUI_Fooocus
+﻿# ComfyUI Fooocus Nodes
 
+# Installation
 
-##  2024年2月19日发布v0.1.1测试版
+1. Clone the repository:
+   `git clone https://github.com/Seedsa/Fooocus_Nodes.git`  
+   to your ComfyUI `custom_nodes` directory
 
-更新工作流   
-添加controlnet功能节点  
-添加高清修复节点   
-添加Ipadapter节点  
-制作安装视频https://www.bilibili.com/video/BV1Yy421z7W9/
+# Update
 
+1. Navigate to the cloned repo e.g. `custom_nodes/Fooocus_Nodes`
+2. `git pull`
 
+# Features
 
+- [x] Fooocus Txt2image&Img2img
+- [x] Fooocus Inpaint&Outpaint
+- [x] Fooocus Upscale
+- [x] Fooocus ImagePrompt&FaceSwap
+- [x] Fooocus Canny&CPDS
+- [x] Fooocus Styles&PromptExpansion
 
-## 2024年1月19日发布v0.1测试版
-基于fooocus开发的自定义节点
-目前已经实现基础的文生图，图生图
-相同种子和提示词可以完美复核fooocus图像
-![image](https://github.com/17Retoucher/ComfyUI_Fooocus/assets/155690734/1210e3c6-2a3e-456e-b528-b20d3b75e8cf)
+# Workflows
 
+## Basic
+
+![basic](/workflow/basic.png)
+
+## FooocusStyles
+
+![basic](/workflow/basic+fooocus_styles.png)
+
+## Canny&CPDS
+
+![basic](/workflow/canny&cpds.png)
+
+## imagePrompt&FaceSwap
+
+![basic](/workflow/imagePrompt&faceswap.png)
+
+## Inpaint&Outpaint
+
+![basic](/workflow/inpaint&outpaint.png)
