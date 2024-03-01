@@ -4,7 +4,7 @@ import time
 import math
 import ldm_patched.modules.model_base
 import ldm_patched.ldm.modules.diffusionmodules.openaimodel
-import comfy.model_management
+import ldm_patched.modules.model_management
 import modules.anisotropic as anisotropic
 import ldm_patched.ldm.modules.attention
 import ldm_patched.k_diffusion.sampling
@@ -17,6 +17,7 @@ import ldm_patched.controlnet.cldm
 import ldm_patched.modules.model_patcher
 import ldm_patched.modules.samplers
 import ldm_patched.modules.args_parser
+import modules.advanced_parameters as advanced_parameters
 import warnings
 import safetensors.torch
 import modules.constants as constants
@@ -26,7 +27,6 @@ from ldm_patched.k_diffusion.sampling import BatchedBrownianTree
 from ldm_patched.ldm.modules.diffusionmodules.openaimodel import forward_timestep_embed, apply_control
 from modules.patch_precision import patch_all_precision
 from modules.patch_clip import patch_all_clip
-import modules.config as config
 
 
 sharpness = 2.0
@@ -62,16 +62,16 @@ def calculate_weight_patched(self, patches, weight, key):
             w1 = v[0]
             if alpha != 0.0:
                 if w1.shape != weight.shape:
-                    print("形状不匹配 {} FOOOCUS权重未合并 {} != {}".format(key, w1.shape, weight.shape))
+                    print("WARNING SHAPE MISMATCH {} WEIGHT NOT MERGED {} != {}".format(key, w1.shape, weight.shape))
                 else:
-                    weight += alpha * comfy.model_management.cast_to_device(w1, weight.device, weight.dtype)
+                    weight += alpha * ldm_patched.modules.model_management.cast_to_device(w1, weight.device, weight.dtype)
         elif patch_type == "lora":
-            mat1 = comfy.model_management.cast_to_device(v[0], weight.device, torch.float32)
-            mat2 = comfy.model_management.cast_to_device(v[1], weight.device, torch.float32)
+            mat1 = ldm_patched.modules.model_management.cast_to_device(v[0], weight.device, torch.float32)
+            mat2 = ldm_patched.modules.model_management.cast_to_device(v[1], weight.device, torch.float32)
             if v[2] is not None:
                 alpha *= v[2] / mat2.shape[0]
             if v[3] is not None:
-                mat3 = comfy.model_management.cast_to_device(v[3], weight.device, torch.float32)
+                mat3 = ldm_patched.modules.model_management.cast_to_device(v[3], weight.device, torch.float32)
                 final_shape = [mat2.shape[1], mat2.shape[0], mat3.shape[2], mat3.shape[3]]
                 mat2 = torch.mm(mat2.transpose(0, 1).flatten(start_dim=1),
                                 mat3.transpose(0, 1).flatten(start_dim=1)).reshape(final_shape).transpose(0, 1)
@@ -79,17 +79,17 @@ def calculate_weight_patched(self, patches, weight, key):
                 weight += (alpha * torch.mm(mat1.flatten(start_dim=1), mat2.flatten(start_dim=1))).reshape(
                     weight.shape).type(weight.dtype)
             except Exception as e:
-                print("错误", key, e)
+                print("ERROR", key, e)
         elif patch_type == "fooocus":
-            w1 = comfy.model_management.cast_to_device(v[0], weight.device, torch.float32)
-            w_min = comfy.model_management.cast_to_device(v[1], weight.device, torch.float32)
-            w_max = comfy.model_management.cast_to_device(v[2], weight.device, torch.float32)
+            w1 = ldm_patched.modules.model_management.cast_to_device(v[0], weight.device, torch.float32)
+            w_min = ldm_patched.modules.model_management.cast_to_device(v[1], weight.device, torch.float32)
+            w_max = ldm_patched.modules.model_management.cast_to_device(v[2], weight.device, torch.float32)
             w1 = (w1 / 255.0) * (w_max - w_min) + w_min
             if alpha != 0.0:
                 if w1.shape != weight.shape:
-                    print("形状不匹配，{} Fooocus权重未合并 {} != {}".format(key, w1.shape, weight.shape))
+                    print("WARNING SHAPE MISMATCH {} FOOOCUS WEIGHT NOT MERGED {} != {}".format(key, w1.shape, weight.shape))
                 else:
-                    weight += alpha * comfy.model_management.cast_to_device(w1, weight.device, weight.dtype)
+                    weight += alpha * ldm_patched.modules.model_management.cast_to_device(w1, weight.device, weight.dtype)
         elif patch_type == "lokr":
             w1 = v[0]
             w2 = v[1]
@@ -102,23 +102,23 @@ def calculate_weight_patched(self, patches, weight, key):
 
             if w1 is None:
                 dim = w1_b.shape[0]
-                w1 = torch.mm(comfy.model_management.cast_to_device(w1_a, weight.device, torch.float32),
-                              comfy.model_management.cast_to_device(w1_b, weight.device, torch.float32))
+                w1 = torch.mm(ldm_patched.modules.model_management.cast_to_device(w1_a, weight.device, torch.float32),
+                              ldm_patched.modules.model_management.cast_to_device(w1_b, weight.device, torch.float32))
             else:
-                w1 = comfy.model_management.cast_to_device(w1, weight.device, torch.float32)
+                w1 = ldm_patched.modules.model_management.cast_to_device(w1, weight.device, torch.float32)
 
             if w2 is None:
                 dim = w2_b.shape[0]
                 if t2 is None:
-                    w2 = torch.mm(comfy.model_management.cast_to_device(w2_a, weight.device, torch.float32),
-                                  comfy.model_management.cast_to_device(w2_b, weight.device, torch.float32))
+                    w2 = torch.mm(ldm_patched.modules.model_management.cast_to_device(w2_a, weight.device, torch.float32),
+                                  ldm_patched.modules.model_management.cast_to_device(w2_b, weight.device, torch.float32))
                 else:
                     w2 = torch.einsum('i j k l, j r, i p -> p r k l',
-                                      comfy.model_management.cast_to_device(t2, weight.device, torch.float32),
-                                      comfy.model_management.cast_to_device(w2_b, weight.device, torch.float32),
-                                      comfy.model_management.cast_to_device(w2_a, weight.device, torch.float32))
+                                      ldm_patched.modules.model_management.cast_to_device(t2, weight.device, torch.float32),
+                                      ldm_patched.modules.model_management.cast_to_device(w2_b, weight.device, torch.float32),
+                                      ldm_patched.modules.model_management.cast_to_device(w2_a, weight.device, torch.float32))
             else:
-                w2 = comfy.model_management.cast_to_device(w2, weight.device, torch.float32)
+                w2 = ldm_patched.modules.model_management.cast_to_device(w2, weight.device, torch.float32)
 
             if len(w2.shape) == 4:
                 w1 = w1.unsqueeze(2).unsqueeze(2)
@@ -128,7 +128,7 @@ def calculate_weight_patched(self, patches, weight, key):
             try:
                 weight += alpha * torch.kron(w1, w2).reshape(weight.shape).type(weight.dtype)
             except Exception as e:
-                print("错误", key, e)
+                print("ERROR", key, e)
         elif patch_type == "loha":
             w1a = v[0]
             w1b = v[1]
@@ -140,36 +140,36 @@ def calculate_weight_patched(self, patches, weight, key):
                 t1 = v[5]
                 t2 = v[6]
                 m1 = torch.einsum('i j k l, j r, i p -> p r k l',
-                                  comfy.model_management.cast_to_device(t1, weight.device, torch.float32),
-                                  comfy.model_management.cast_to_device(w1b, weight.device, torch.float32),
-                                  comfy.model_management.cast_to_device(w1a, weight.device, torch.float32))
+                                  ldm_patched.modules.model_management.cast_to_device(t1, weight.device, torch.float32),
+                                  ldm_patched.modules.model_management.cast_to_device(w1b, weight.device, torch.float32),
+                                  ldm_patched.modules.model_management.cast_to_device(w1a, weight.device, torch.float32))
 
                 m2 = torch.einsum('i j k l, j r, i p -> p r k l',
-                                  comfy.model_management.cast_to_device(t2, weight.device, torch.float32),
-                                  comfy.model_management.cast_to_device(w2b, weight.device, torch.float32),
-                                  comfy.model_management.cast_to_device(w2a, weight.device, torch.float32))
+                                  ldm_patched.modules.model_management.cast_to_device(t2, weight.device, torch.float32),
+                                  ldm_patched.modules.model_management.cast_to_device(w2b, weight.device, torch.float32),
+                                  ldm_patched.modules.model_management.cast_to_device(w2a, weight.device, torch.float32))
             else:
-                m1 = torch.mm(comfy.model_management.cast_to_device(w1a, weight.device, torch.float32),
-                              comfy.model_management.cast_to_device(w1b, weight.device, torch.float32))
-                m2 = torch.mm(comfy.model_management.cast_to_device(w2a, weight.device, torch.float32),
-                              comfy.model_management.cast_to_device(w2b, weight.device, torch.float32))
+                m1 = torch.mm(ldm_patched.modules.model_management.cast_to_device(w1a, weight.device, torch.float32),
+                              ldm_patched.modules.model_management.cast_to_device(w1b, weight.device, torch.float32))
+                m2 = torch.mm(ldm_patched.modules.model_management.cast_to_device(w2a, weight.device, torch.float32),
+                              ldm_patched.modules.model_management.cast_to_device(w2b, weight.device, torch.float32))
 
             try:
                 weight += (alpha * m1 * m2).reshape(weight.shape).type(weight.dtype)
             except Exception as e:
-                print("错误", key, e)
+                print("ERROR", key, e)
         elif patch_type == "glora":
             if v[4] is not None:
                 alpha *= v[4] / v[0].shape[0]
 
-            a1 = comfy.model_management.cast_to_device(v[0].flatten(start_dim=1), weight.device, torch.float32)
-            a2 = comfy.model_management.cast_to_device(v[1].flatten(start_dim=1), weight.device, torch.float32)
-            b1 = comfy.model_management.cast_to_device(v[2].flatten(start_dim=1), weight.device, torch.float32)
-            b2 = comfy.model_management.cast_to_device(v[3].flatten(start_dim=1), weight.device, torch.float32)
+            a1 = ldm_patched.modules.model_management.cast_to_device(v[0].flatten(start_dim=1), weight.device, torch.float32)
+            a2 = ldm_patched.modules.model_management.cast_to_device(v[1].flatten(start_dim=1), weight.device, torch.float32)
+            b1 = ldm_patched.modules.model_management.cast_to_device(v[2].flatten(start_dim=1), weight.device, torch.float32)
+            b2 = ldm_patched.modules.model_management.cast_to_device(v[3].flatten(start_dim=1), weight.device, torch.float32)
 
             weight += ((torch.mm(b2, b1) + torch.mm(torch.mm(weight.flatten(start_dim=1), a2), a1)) * alpha).reshape(weight.shape).type(weight.dtype)
         else:
-            print("patch类型无法识别", patch_type, key)
+            print("patch type not recognized", patch_type, key)
 
     return weight
 
@@ -180,7 +180,7 @@ class BrownianTreeNoiseSamplerPatched:
 
     @staticmethod
     def global_init(x, sigma_min, sigma_max, seed=None, transform=lambda x: x, cpu=False):
-        if comfy.model_management.directml_enabled:
+        if ldm_patched.modules.model_management.directml_enabled:
             cpu = True
 
         t0, t1 = transform(torch.as_tensor(sigma_min)), transform(torch.as_tensor(sigma_max))
@@ -357,10 +357,10 @@ def patched_cldm_forward(self, x, hint, timesteps, context, y=None, **kwargs):
     h = self.middle_block(h, emb, context)
     outs.append(self.middle_block_out(h, emb, context))
 
-    if config.controlnet_softness > 0:
+    if advanced_parameters.controlnet_softness > 0:
         for i in range(10):
             k = 1.0 - float(i) / 9.0
-            outs[i] = outs[i] * (1.0 - config.controlnet_softness * k)
+            outs[i] = outs[i] * (1.0 - advanced_parameters.controlnet_softness * k)
 
     return outs
 
@@ -438,10 +438,10 @@ def patched_unet_forward(self, x, timesteps=None, context=None, y=None, control=
 
 def patched_load_models_gpu(*args, **kwargs):
     execution_start_time = time.perf_counter()
-    y = comfy.model_management.load_models_gpu_origin(*args, **kwargs)
+    y = ldm_patched.modules.model_management.load_models_gpu_origin(*args, **kwargs)
     moving_time = time.perf_counter() - execution_start_time
     if moving_time > 0.1:
-        print(f'[模型管理] 移动模型用时 {moving_time:.2f} 秒')
+        print(f'[Fooocus Model Management] Moving model(s) has taken {moving_time:.2f} seconds')
     return y
 
 
@@ -480,17 +480,18 @@ def build_loaded(module, loader_name):
 
 
 def patch_all():
-    if comfy.model_management.directml_enabled:
-        comfy.model_management.lowvram_available = True
-        comfy.model_management.OOM_EXCEPTION = Exception
+    print('patch all')
+    if ldm_patched.modules.model_management.directml_enabled:
+        ldm_patched.modules.model_management.lowvram_available = True
+        ldm_patched.modules.model_management.OOM_EXCEPTION = Exception
 
     patch_all_precision()
     patch_all_clip()
 
-    if not hasattr(comfy.model_management, 'load_models_gpu_origin'):
-        comfy.model_management.load_models_gpu_origin = comfy.model_management.load_models_gpu
+    if not hasattr(ldm_patched.modules.model_management, 'load_models_gpu_origin'):
+        ldm_patched.modules.model_management.load_models_gpu_origin = ldm_patched.modules.model_management.load_models_gpu
 
-    comfy.model_management.load_models_gpu = patched_load_models_gpu
+    ldm_patched.modules.model_management.load_models_gpu = patched_load_models_gpu
     ldm_patched.modules.model_patcher.ModelPatcher.calculate_weight = calculate_weight_patched
     ldm_patched.controlnet.cldm.ControlNet.forward = patched_cldm_forward
     ldm_patched.ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = patched_unet_forward
