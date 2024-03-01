@@ -11,10 +11,8 @@ import config as config
 import modules.default_pipeline as pipeline
 import modules.core as core
 from modules.sdxl_styles import apply_style,apply_wildcards,fooocus_expansion
-import modules.advanced_parameters as advanced_parameters
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
-import modules.flags as flags
 
 import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
@@ -24,11 +22,9 @@ from modules.util import (
     remove_empty_str,
     HWC3,
     resize_image,
-    get_image_shape_ceil,
     set_image_shape_ceil,
     get_shape_ceil,
     resample_image,
-    erode_or_dilate,
 )
 import ldm_patched.modules.model_management as model_management
 
@@ -36,7 +32,7 @@ from modules.upscaler import perform_upscale
 import modules.inpaint_worker as inpaint_worker
 import modules.patch
 from typing import   Tuple
-from log import log_node_info,log_node_error,log_node_success
+from log import log_node_info
 import random
 import time
 import copy
@@ -737,7 +733,7 @@ class FooocusUpscale:
                 "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
                 "upscale": ([1.5, 2.0], {"default": 1.5, }),
-                "steps": ("INT", {"default": 18, "min": 10, "max": 100}),
+                "steps": ("INT", {"default": 18, "min": 1, "max": 100}),
                 "denoise": ("FLOAT", {"default": 0.382, "min": 0.00, "max": 1.00, "step": 0.001},),
                 "fast":("BOOLEAN",{"default":False}),
                 "image_output": (["Hide", "Preview", "Save", "Hide/Save",], {"default": "Preview"},),

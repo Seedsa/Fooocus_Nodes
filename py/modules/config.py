@@ -60,7 +60,8 @@ FOOOCUS_IMAGE_PROMPT = {
 
 path_fooocus_expansion = folder_paths.models_dir+"/prompt_expansion/fooocus_expansion"
 path_loras=folder_paths.get_folder_paths('loras')[0]
-path_upscale_models=folder_paths.get_folder_paths('upscale_models')[0]
+path_embeddings=folder_paths.get_folder_paths('embeddings')[0]
+path_vae_approx=folder_paths.get_folder_paths('vae_approx')[0]
 path_checkpoints=folder_paths.models_dir+"/checkpoints"
 path_vae_approx=folder_paths.get_folder_paths('vae_approx')[0]
 path_embeddings=folder_paths.get_folder_paths('embeddings')[0]

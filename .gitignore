@@ -6,4 +6,4 @@ __pycache__/
 *.pth
 types
 *.pyc
-.DS_store
+.DS_Store
