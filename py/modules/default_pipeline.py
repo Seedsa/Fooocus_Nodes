@@ -79,7 +79,6 @@ def refresh_refiner_model(name):
     import folder_paths
 
     filename = folder_paths.get_full_path("checkpoints", name)
-
     if model_refiner.filename == filename:
         return
 
@@ -252,11 +251,11 @@ def refresh_everything(refiner_model_name, base_model_name, loras,
     return
 
 
-# refresh_everything(
-#     refiner_model_name=modules.config.default_refiner_model_name,
-#     base_model_name=modules.config.default_base_model_name,
-#     loras=modules.config.default_loras
-# )
+refresh_everything(
+    refiner_model_name=modules.config.default_refiner_model_name,
+    base_model_name=modules.config.default_base_model_name,
+    loras=modules.config.default_loras
+)
 
 
 @torch.no_grad()
