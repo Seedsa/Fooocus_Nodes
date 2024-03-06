@@ -351,6 +351,8 @@ class FooocusPreKSampler:
             inpaint_respective_field = fooocus_inpaint.get("inpaint_respective_field")
 
             inpaint_image = HWC3(inpaint_image)
+            log_node_info('Downloading upscale models ...')
+            inpaint_head_model_path = get_local_filepath(config.FOOOCUS_UPSCALE_MODEL["model_url"], config.UPSCALE_DIR)
             if inpaint_parameterized:
                 print('Downloading inpainter ...')
                 inpaint_head_model_path = get_local_filepath(config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
@@ -754,6 +756,8 @@ class FooocusUpscale:
         all_imgs = []
         all_steps = pipe["steps"] * len(image)
         pbar = comfy.utils.ProgressBar(all_steps)
+        log_node_info('Downloading upscale models ...')
+        get_local_filepath(config.FOOOCUS_UPSCALE_MODEL["model_url"], config.UPSCALE_DIR)
 
         def callback(step, x0, x, total_steps, y):
             preview_bytes = None

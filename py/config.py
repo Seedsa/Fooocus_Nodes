@@ -33,6 +33,7 @@ BASE_RESOLUTIONS = [
 ]
 
 INPAINT_DIR = os.path.join(folder_paths.models_dir, "inpaint")
+UPSCALE_DIR = os.path.join(folder_paths.models_dir, "upscale_models")
 CONTROLNET_DIR = os.path.join(folder_paths.models_dir, "controlnet")
 CLIP_VISION_DIR = os.path.join(folder_paths.models_dir, "clip_vision")
 FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "styles")
@@ -42,6 +43,9 @@ FOOOCUS_INPAINT_HEAD = {
     "fooocus_inpaint_head": {
         "model_url": "https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_inpaint_head.pth"
     }
+}
+FOOOCUS_UPSCALE_MODEL = {
+    "model_url": "https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin"
 }
 FOOOCUS_INPAINT_PATCH = {
     "v2.6": {
