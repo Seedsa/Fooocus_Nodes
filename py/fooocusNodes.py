@@ -339,13 +339,20 @@ class FooocusPreKSampler:
 
         if fooocus_inpaint is not None:
             inpaint_image = fooocus_inpaint.get("image")
-            inpaint_image = inpaint_image[0].numpy()
-            inpaint_image = (inpaint_image * 255).astype(np.uint8)
+            inpaint_image = core.pytorch_to_numpy(inpaint_image)[0]
 
             inpaint_mask = fooocus_inpaint.get("mask")
             if inpaint_mask is not None:
-                inpaint_mask = inpaint_mask[0].numpy()
-                inpaint_mask = (inpaint_mask * 255).astype(np.uint8)
+                inpaint_mask = core.pytorch_to_numpy(inpaint_mask)[0]
+                inpaint_mask = HWC3(inpaint_mask)
+                if isinstance(inpaint_mask, np.ndarray):
+                    if inpaint_mask.ndim == 3:
+                        H, W, C = inpaint_image.shape
+                        inpaint_mask = resample_image(inpaint_mask, width=W, height=H)
+                        inpaint_mask = np.mean(inpaint_mask, axis=2)
+                        inpaint_mask = (inpaint_mask > 127).astype(np.uint8) * 255
+                        inpaint_mask = np.maximum(inpaint_mask, inpaint_mask)
+
             inpaint_engine = fooocus_inpaint.get("inpaint_engine")
             inpaint_disable_initial_latent = fooocus_inpaint.get("inpaint_disable_initial_latent")
             inpaint_respective_field = fooocus_inpaint.get("inpaint_respective_field")
