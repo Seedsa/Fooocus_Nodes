@@ -22,6 +22,10 @@ import ldm_patched.t2ia.adapter
 import ldm_patched.modules.supported_models_base
 import ldm_patched.taesd.taesd
 
+import modules.config
+
+model_cache = {}
+
 def load_model_weights(model, sd):
     m, u = model.load_state_dict(sd, strict=False)
     m = set(m)
@@ -427,7 +431,18 @@ def load_checkpoint(config_path=None, ckpt_path=None, output_vae=True, output_cl
 
     return (ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=offload_device), clip, vae)
 
+@torch.no_grad()
+@torch.inference_mode()
 def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, output_clipvision=False, embedding_directory=None, output_model=True):
+    if modules.config.use_model_cache and ckpt_path in model_cache:
+        print("Using cached model.")
+        return model_cache[ckpt_path]
+    else:
+        model = load_checkpoint_guess_config_without_cache(ckpt_path, output_vae, output_clip, output_clipvision, embedding_directory, output_model)
+        model_cache[ckpt_path] = model
+        return model
+
+def load_checkpoint_guess_config_without_cache(ckpt_path, output_vae=True, output_clip=True, output_clipvision=False, embedding_directory=None, output_model=True):
     sd = ldm_patched.modules.utils.load_torch_file(ckpt_path)
     sd_keys = sd.keys()
     clip = None
