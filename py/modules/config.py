@@ -63,6 +63,8 @@ path_fooocus_expansion = folder_paths.models_dir+"/prompt_expansion/fooocus_expa
 path_loras=folder_paths.get_folder_paths('loras')[0]
 path_embeddings=folder_paths.get_folder_paths('embeddings')[0]
 path_vae_approx=folder_paths.get_folder_paths('vae_approx')[0]
+path_controlnet=folder_paths.get_folder_paths('controlnet')[0]
+
 use_model_cache = True
 path_checkpoints=folder_paths.models_dir+"/checkpoints"
 default_refiner_model_name='None'
