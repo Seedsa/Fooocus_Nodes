@@ -906,14 +906,14 @@ class FooocusControlnet:
           cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[config.cn_canny]["model_url"],config.CONTROLNET_DIR)
           image = image[0].numpy()
           image = (image * 255).astype(np.uint8)
-          image = resize_image(HWC3(image), pipe["width"], pipe["height"])
+          image = resize_image(HWC3(image), pipe["latent_width"], pipe["latent_height"])
           if not skip_cn_preprocess:
             image = preprocessors.canny_pyramid(image)
         if cn_type == config.cn_cpds:
           cn_path = get_local_filepath(config.FOOOCUS_IMAGE_PROMPT[config.cn_cpds]["model_url"],config.CONTROLNET_DIR)
           image = image[0].numpy()
           image = (image * 255).astype(np.uint8)
-          image = resize_image(HWC3(image), pipe["width"], pipe["height"])
+          image = resize_image(HWC3(image), pipe["latent_width"], pipe["latent_height"])
           if not skip_cn_preprocess:
             image = preprocessors.cpds(image)
         image = HWC3(image)
