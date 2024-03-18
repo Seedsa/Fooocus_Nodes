@@ -1,9 +1,5 @@
 import os
-import json
-from pathlib import Path
 from modules.config import FOOOCUS_STYLES_DIR
-
-
 
 
 # 风格提示词选择器
@@ -53,7 +49,8 @@ class FooocusStyles:
         values = []
         if my_unique_id in prompt:
             if prompt[my_unique_id]["inputs"]["select_styles"]:
-                values = prompt[my_unique_id]["inputs"]["select_styles"].split(",")
+                values = prompt[my_unique_id]["inputs"]["select_styles"].split(
+                    ",")
 
         return (values,)
 
@@ -66,8 +63,8 @@ class positivePrompt:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"positive": ( "STRING", {"default": "", "multiline": True, "placeholder": "Positive"},),
-            }
+            "required": {"positive": ("STRING", {"default": "", "multiline": True, "placeholder": "Positive"},),
+                         }
         }
 
     RETURN_TYPES = ("STRING",)
@@ -108,7 +105,6 @@ class negativePrompt:
         return (negative,)
 
 
-
 NODE_CLASS_MAPPINGS = {
     "Fooocus positive": positivePrompt,
     "Fooocus negative": negativePrompt,
@@ -119,5 +115,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Fooocus positive": "Positive",
     "Fooocus negative": "Negative",
     "Fooocus stylesSelector": "stylesPromptSelector",
-    "Fooocus Styles":"Fooocus Styles"
+    "Fooocus Styles": "Fooocus Styles"
 }

@@ -3,6 +3,7 @@ from urllib.parse import urlparse
 from torch.hub import download_url_to_file
 from log import log_node_warn
 
+
 def get_local_filepath(url, dirname, local_file_name=None):
     if not os.path.exists(dirname):
         os.makedirs(dirname)

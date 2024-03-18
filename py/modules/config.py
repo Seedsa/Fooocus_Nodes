@@ -30,7 +30,8 @@ BASE_RESOLUTIONS = [
 
 INPAINT_DIR = os.path.join(folder_paths.models_dir, "inpaint")
 CONTROLNET_DIR = os.path.join(folder_paths.models_dir, "controlnet")
-FOOOCUS_STYLES_DIR = os.path.join(Path(__file__).parent.parent.parent, "sdxl_styles")
+FOOOCUS_STYLES_DIR = os.path.join(
+    Path(__file__).parent.parent.parent, "sdxl_styles")
 
 
 FOOOCUS_INPAINT_HEAD = {
@@ -50,44 +51,44 @@ FOOOCUS_INPAINT_PATCH = {
     },
 }
 FOOOCUS_IMAGE_PROMPT = {
-  "PyraCanny":{
-    "model_url":"https://huggingface.co/lllyasviel/misc/resolve/main/control-lora-canny-rank128.safetensors"
-  },
-  "CPDS":{
-    "model_url":"https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_xl_cpds_128.safetensors"
-  }
+    "PyraCanny": {
+        "model_url": "https://huggingface.co/lllyasviel/misc/resolve/main/control-lora-canny-rank128.safetensors"
+    },
+    "CPDS": {
+        "model_url": "https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_xl_cpds_128.safetensors"
+    }
 }
 
-controlnet_softness=0.25
-path_fooocus_expansion = folder_paths.models_dir+"/prompt_expansion/fooocus_expansion"
-path_loras=folder_paths.get_folder_paths('loras')[0]
-path_embeddings=folder_paths.get_folder_paths('embeddings')[0]
-path_vae_approx=folder_paths.get_folder_paths('vae_approx')[0]
-path_controlnet=folder_paths.get_folder_paths('controlnet')[0]
+path_fooocus_expansion = folder_paths.models_dir + \
+    "/prompt_expansion/fooocus_expansion"
+path_loras = folder_paths.get_folder_paths('loras')[0]
+path_embeddings = folder_paths.get_folder_paths('embeddings')[0]
+path_vae_approx = folder_paths.get_folder_paths('vae_approx')[0]
+path_controlnet = folder_paths.get_folder_paths('controlnet')[0]
 
 use_model_cache = True
-path_checkpoints=folder_paths.models_dir+"/checkpoints"
-default_refiner_model_name='None'
-default_base_model_name="juggernautXL_v8Rundiffusion.safetensors"
-default_loras=[
-        [
-            "None",
-            1.0
-        ],
-        [
-            "None",
-            1.0
-        ],
-        [
-            "None",
-            1.0
-        ],
-        [
-            "None",
-            1.0
-        ],
-        [
-            "None",
-            1.0
-        ]
+path_checkpoints = folder_paths.models_dir + "/checkpoints"
+default_refiner_model_name = 'None'
+default_base_model_name = "juggernautXL_v8Rundiffusion.safetensors"
+default_loras = [
+    [
+        "None",
+        1.0
+    ],
+    [
+        "None",
+        1.0
+    ],
+    [
+        "None",
+        1.0
+    ],
+    [
+        "None",
+        1.0
+    ],
+    [
+        "None",
+        1.0
     ]
+]
