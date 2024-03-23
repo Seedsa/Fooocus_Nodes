@@ -35,6 +35,7 @@ BASE_RESOLUTIONS = [
 INPAINT_DIR = os.path.join(folder_paths.models_dir, "inpaint")
 UPSCALE_DIR = os.path.join(folder_paths.models_dir, "upscale_models")
 CONTROLNET_DIR = os.path.join(folder_paths.models_dir, "controlnet")
+IPADAPTER_DIR = os.path.join(folder_paths.models_dir, "ipadapter")
 CLIP_VISION_DIR = os.path.join(folder_paths.models_dir, "clip_vision")
 FOOOCUS_STYLES_DIR = os.path.join(
     Path(__file__).parent.parent.parent, "styles")
@@ -110,20 +111,20 @@ def downloading_ip_adapters(v):
     results += [os.path.join(CLIP_VISION_DIR, 'clip_vision_vit_h.safetensors')]
 
     get_local_filepath('https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors',
-                       CONTROLNET_DIR, "fooocus_ip_negative.safetensors")
-    results += [os.path.join(CONTROLNET_DIR,
+                       IPADAPTER_DIR, "fooocus_ip_negative.safetensors")
+    results += [os.path.join(IPADAPTER_DIR,
                              'fooocus_ip_negative.safetensors')]
 
     if v == 'ip':
         get_local_filepath('https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin',
-                           CONTROLNET_DIR, "ip-adapter-plus_sdxl_vit-h.bin")
-        results += [os.path.join(CONTROLNET_DIR,
+                           IPADAPTER_DIR, "ip-adapter-plus_sdxl_vit-h.bin")
+        results += [os.path.join(IPADAPTER_DIR,
                                  'ip-adapter-plus_sdxl_vit-h.bin')]
 
     if v == 'face':
         get_local_filepath('https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin',
-                           CONTROLNET_DIR, "ip-adapter-plus-face_sdxl_vit-h.bin")
-        results += [os.path.join(CONTROLNET_DIR,
+                           IPADAPTER_DIR, "ip-adapter-plus-face_sdxl_vit-h.bin")
+        results += [os.path.join(IPADAPTER_DIR,
                                  'ip-adapter-plus-face_sdxl_vit-h.bin')]
 
     return results
