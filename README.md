@@ -13,7 +13,8 @@
 
 # Enable Model Cache
 
-/py/modules/config.py/use_model_cache = True/False
+(RAM > 40GB)
+/py/modules/config.py/use_model_cache = True
 
 # Features
 

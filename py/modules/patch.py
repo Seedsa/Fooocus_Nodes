@@ -382,7 +382,7 @@ def patched_unet_forward(self, x, timesteps=None, context=None, y=None, control=
     time_context = kwargs.get("time_context", None)
 
     assert (y is not None) == (
-            self.num_classes is not None
+        self.num_classes is not None
     ), "must specify y if and only if the model is class-conditional"
     hs = []
     t_emb = ldm_patched.ldm.modules.diffusionmodules.openaimodel.timestep_embedding(timesteps, self.model_channels, repeat_only=False).to(x.dtype)
@@ -480,7 +480,6 @@ def build_loaded(module, loader_name):
 
 
 def patch_all():
-    print('patch all')
     if ldm_patched.modules.model_management.directml_enabled:
         ldm_patched.modules.model_management.lowvram_available = True
         ldm_patched.modules.model_management.OOM_EXCEPTION = Exception

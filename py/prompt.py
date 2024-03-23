@@ -1,5 +1,5 @@
 import os
-from modules.config import FOOOCUS_STYLES_DIR
+from modules.config import path_styles
 
 
 # 风格提示词选择器
@@ -7,7 +7,7 @@ class FooocusStyles:
     @classmethod
     def INPUT_TYPES(s):
         styles = ["fooocus_styles"]
-        styles_dir = FOOOCUS_STYLES_DIR
+        styles_dir = path_styles
         for file_name in os.listdir(styles_dir):
             file = os.path.join(styles_dir, file_name)
             if (

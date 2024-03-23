@@ -7,7 +7,8 @@ modules_path = os.path.dirname(os.path.realpath(__file__))
 import numpy as np
 import folder_paths
 from comfy.samplers import *
-import config as config
+import modules.config
+import modules.flags
 import modules.default_pipeline as pipeline
 import modules.core as core
 from modules.sdxl_styles import apply_style, apply_wildcards, fooocus_expansion
@@ -16,7 +17,6 @@ import extras.face_crop as face_crop
 import modules.advanced_parameters as advanced_parameters
 import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
-from fooocus import get_local_filepath
 from nodes import SaveImage, PreviewImage
 from modules.util import (
     remove_empty_str,
@@ -105,7 +105,7 @@ class FooocusLoader:
     @classmethod
     def INPUT_TYPES(cls):
         resolution_strings = [
-            f"{width} x {height}" for width, height in config.BASE_RESOLUTIONS
+            f"{width} x {height}" for width, height in modules.config.BASE_RESOLUTIONS
         ]
         return {
             "required": {
@@ -129,7 +129,7 @@ class FooocusLoader:
 
     @classmethod
     def get_resolution_strings(cls):
-        return [f"{width} x {height}" for width, height in config.BASE_RESOLUTIONS]
+        return [f"{width} x {height}" for width, height in modules.config.BASE_RESOLUTIONS]
 
     def process_resolution(self, resolution: str) -> Tuple[int, int]:
         if resolution == "自定义 x 自定义":
@@ -367,18 +367,13 @@ class FooocusPreKSampler:
 
             inpaint_image = HWC3(inpaint_image)
             log_node_info('Downloading upscale models ...')
-            inpaint_head_model_path = get_local_filepath(
-                config.FOOOCUS_UPSCALE_MODEL["model_url"], config.UPSCALE_DIR)
+            modules.config.downloading_upscale_model()
             if inpaint_parameterized:
                 print('Downloading inpainter ...')
-                inpaint_head_model_path = get_local_filepath(
-                    config.FOOOCUS_INPAINT_HEAD["fooocus_inpaint_head"]["model_url"], config.INPAINT_DIR)
-                inpaint_patch_model_path = get_local_filepath(
-                    config.FOOOCUS_INPAINT_PATCH[inpaint_engine]["model_url"], config.INPAINT_DIR)
-                base_model_additional_loras += [
-                    (inpaint_patch_model_path, 1.0)]
-                print(
-                    f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
+                inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                    inpaint_engine)
+                base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
+                print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
                 if refiner_model_name == "None":
                     use_synthetic_refiner = True
                     refiner_switch = 0.5
@@ -714,7 +709,7 @@ class FooocusKsampler:
 
         for current_task_id, task in enumerate(pipe["tasks"]):
             try:
-                print(f"正在生成第 {current_task_id + 1} 张图像……")
+                print(f"Current Task {current_task_id + 1} ……")
                 positive_cond, negative_cond = task['c'], task['uc']
                 if "cn_tasks" in pipe and len(pipe["cn_tasks"]) > 0:
                     for cn_path, cn_img, cn_stop, cn_weight in pipe["cn_tasks"]:
@@ -798,8 +793,7 @@ class FooocusUpscale:
         all_steps = pipe["steps"] * len(image)
         pbar = comfy.utils.ProgressBar(all_steps)
         log_node_info('Downloading upscale models ...')
-        get_local_filepath(
-            config.FOOOCUS_UPSCALE_MODEL["model_url"], config.UPSCALE_DIR)
+        modules.config.downloading_upscale_model()
 
         def callback(step, x0, x, total_steps, y):
             preview_bytes = None
@@ -920,9 +914,9 @@ class FooocusControlnet:
             "required": {
                 "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
-                "cn_type": (config.cn_list, {"default": config.default_cn}, ),
-                "cn_stop": ("FLOAT", {"default": config.default_parameters[config.default_cn][0], "min": 0.0, "max": 1.0, "step": 0.01},),
-                "cn_weight": ("FLOAT", {"default": config.default_parameters[config.default_cn][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+                "cn_type": (modules.flags.cn_list, {"default": modules.flags.default_cn}, ),
+                "cn_stop": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_cn][0], "min": 0.0, "max": 1.0, "step": 0.01},),
+                "cn_weight": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_cn][1], "min": 0.0, "max": 2.0, "step": 0.01},),
                 "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
             },
         }
@@ -937,18 +931,16 @@ class FooocusControlnet:
         self, pipe, image, cn_type, cn_stop, cn_weight, skip_cn_preprocess
     ):
         print("process controlnet...")
-        if cn_type == config.cn_canny:
-            cn_path = get_local_filepath(
-                config.FOOOCUS_IMAGE_PROMPT[config.cn_canny]["model_url"], config.CONTROLNET_DIR)
+        if cn_type == modules.flags.cn_canny:
+            cn_path = modules.config.downloading_controlnet_canny()
             image = image[0].numpy()
             image = (image * 255).astype(np.uint8)
             image = resize_image(
                 HWC3(image), pipe["latent_width"], pipe["latent_height"])
             if not skip_cn_preprocess:
                 image = preprocessors.canny_pyramid(image)
-        if cn_type == config.cn_cpds:
-            cn_path = get_local_filepath(
-                config.FOOOCUS_IMAGE_PROMPT[config.cn_cpds]["model_url"], config.CONTROLNET_DIR)
+        if cn_type == modules.flags.cn_cpds:
+            cn_path = modules.config.downloading_controlnet_cpds()
             image = image[0].numpy()
             image = (image * 255).astype(np.uint8)
             image = resize_image(
@@ -970,9 +962,9 @@ class FooocusImagePrompt:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "ip_type": (config.ip_list, {"default": config.default_ip}, ),
-                "ip_stop": ("FLOAT", {"default": config.default_parameters[config.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
-                "ip_weight": ("FLOAT", {"default": config.default_parameters[config.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+                "ip_type": (modules.flags.ip_list, {"default": modules.flags.default_ip}, ),
+                "ip_stop": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
+                "ip_weight": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
                 "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
             },
         }
@@ -986,8 +978,8 @@ class FooocusImagePrompt:
     def image_prompt(
         self, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
     ):
-        if ip_type == config.cn_ip:
-            clip_vision_path, ip_negative_path, ip_adapter_path = config.downloading_ip_adapters(
+        if ip_type == modules.flags.cn_ip:
+            clip_vision_path, ip_negative_path, ip_adapter_path = modules.config.downloading_ip_adapters(
                 'ip')
             ip_adapter.load_ip_adapter(
                 clip_vision_path, ip_negative_path, ip_adapter_path)
@@ -998,8 +990,8 @@ class FooocusImagePrompt:
             task = [image, ip_stop, ip_weight]
             task[0] = ip_adapter.preprocess(
                 image, ip_adapter_path=ip_adapter_path)
-        if ip_type == config.cn_ip_face:
-            clip_vision_path, ip_negative_path, ip_adapter_face_path = config.downloading_ip_adapters(
+        if ip_type == modules.flags.cn_ip_face:
+            clip_vision_path, ip_negative_path, ip_adapter_face_path = modules.config.downloading_ip_adapters(
                 'face')
             ip_adapter.load_ip_adapter(
                 clip_vision_path, ip_negative_path, ip_adapter_face_path)
@@ -1060,7 +1052,7 @@ class FooocusInpaint:
                 "image": ("IMAGE",),
                 "inpaint_disable_initial_latent": ("BOOLEAN", {"default": False}),
                 "inpaint_respective_field": ("FLOAT", {"default": 0.618, "min": 0, "max": 1.0, "step": 0.1},),
-                "inpaint_engine": (config.inpaint_engine_versions, {"default": "v2.6"},),
+                "inpaint_engine": (modules.flags.inpaint_engine_versions, {"default": "v2.6"},),
                 "top": ("BOOLEAN", {"default": False}),
                 "bottom": ("BOOLEAN", {"default": False}),
                 "left": ("BOOLEAN", {"default": False}),
