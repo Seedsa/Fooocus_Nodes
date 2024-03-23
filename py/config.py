@@ -5,6 +5,8 @@ import os
 from urllib.parse import urlparse
 from torch.hub import download_url_to_file
 from log import log_node_warn
+from modules.model_loader import load_file_from_url
+
 
 BASE_RESOLUTIONS = [
     (128, 128),
@@ -106,6 +108,7 @@ def downloading_ip_adapters(v):
     assert v in ['ip', 'face']
 
     results = []
+
     get_local_filepath('https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors',
                        CLIP_VISION_DIR, "clip_vision_vit_h.safetensors")
     results += [os.path.join(CLIP_VISION_DIR, 'clip_vision_vit_h.safetensors')]

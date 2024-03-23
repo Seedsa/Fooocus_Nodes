@@ -67,7 +67,7 @@ path_vae_approx = folder_paths.get_folder_paths('vae_approx')[0]
 path_controlnet = folder_paths.get_folder_paths('controlnet')[0]
 
 use_model_cache = False
-path_checkpoints = folder_paths.models_dir + "/checkpoints"
+path_checkpoints = folder_paths.get_folder_paths('checkpoints')[0]
 default_refiner_model_name = 'None'
 default_base_model_name = "juggernautXL_v8Rundiffusion.safetensors"
 default_loras = [
@@ -92,3 +92,54 @@ default_loras = [
         1.0
     ]
 ]
+
+
+def downloading_ip_adapters(v):
+    assert v in ['ip', 'face']
+
+    results = []
+
+    load_file_from_url(
+        url='https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors',
+        model_dir=path_clip_vision,
+        file_name='clip_vision_vit_h.safetensors'
+    )
+    results += [os.path.join(path_clip_vision,
+                             'clip_vision_vit_h.safetensors')]
+
+    load_file_from_url(
+        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors',
+        model_dir=path_controlnet,
+        file_name='fooocus_ip_negative.safetensors'
+    )
+    results += [os.path.join(path_controlnet,
+                             'fooocus_ip_negative.safetensors')]
+
+    if v == 'ip':
+        load_file_from_url(
+            url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin',
+            model_dir=path_controlnet,
+            file_name='ip-adapter-plus_sdxl_vit-h.bin'
+        )
+        results += [os.path.join(path_controlnet,
+                                 'ip-adapter-plus_sdxl_vit-h.bin')]
+
+    if v == 'face':
+        load_file_from_url(
+            url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin',
+            model_dir=path_controlnet,
+            file_name='ip-adapter-plus-face_sdxl_vit-h.bin'
+        )
+        results += [os.path.join(path_controlnet,
+                                 'ip-adapter-plus-face_sdxl_vit-h.bin')]
+
+    return results
+
+
+def downloading_upscale_model():
+    load_file_from_url(
+        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin',
+        model_dir=path_upscale_models,
+        file_name='fooocus_upscaler_s409985e5.bin'
+    )
+    return os.path.join(path_upscale_models, 'fooocus_upscaler_s409985e5.bin')

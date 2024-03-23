@@ -1,5 +1,13 @@
 import os
 import importlib
+import shutil
+from .py.modules.model_loader import load_file_from_url
+from .py.modules.config import (
+    path_vae_approx as vae_approx_path,
+    path_fooocus_expansion as fooocus_expansion_path,
+)
+from .py import log
+from .py.modules.model_loader import load_file_from_url
 
 
 node_list = [
@@ -21,6 +29,51 @@ for module_name in node_list:
 
 
 WEB_DIRECTORY = "./web"
+
+
+def get_ext_dir(subpath=None, mkdir=False):
+    dir = os.path.dirname(__file__)
+    if subpath is not None:
+        dir = os.path.join(dir, subpath)
+    dir = os.path.abspath(dir)
+    if mkdir and not os.path.exists(dir):
+        os.makedirs(dir)
+    return dir
+
+
+def install_expansion():
+    src_dir = get_ext_dir("fooocus_expansion")
+    if not os.path.exists(src_dir):
+        log.log_node_error(
+            "prompt_expansion is not exists. Please reinstall the extension.")
+        return
+    if not os.path.exists(fooocus_expansion_path):
+        log.log_node_info('Copying Prompt Expansion files')
+        shutil.copytree(src_dir, fooocus_expansion_path, dirs_exist_ok=True)
+
+
+def download_models():
+    vae_approx_filenames = [
+        ('xlvaeapp.pth', 'https://huggingface.co/lllyasviel/misc/resolve/main/xlvaeapp.pth'),
+        ('vaeapp_sd15.pth',
+         'https://huggingface.co/lllyasviel/misc/resolve/main/vaeapp_sd15.pt'),
+        ('xl-to-v1_interposer-v3.1.safetensors',
+         'https://huggingface.co/lllyasviel/misc/resolve/main/xl-to-v1_interposer-v3.1.safetensors')
+    ]
+
+    for file_name, url in vae_approx_filenames:
+        load_file_from_url(
+            url=url, model_dir=vae_approx_path, file_name=file_name)
+
+    install_expansion()
+    load_file_from_url(
+        url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
+        model_dir=fooocus_expansion_path,
+        file_name='pytorch_model.bin'
+    )
+
+
+download_models()
 
 __all__ = ['NODE_CLASS_MAPPINGS',
            'NODE_DISPLAY_NAME_MAPPINGS', "WEB_DIRECTORY"]
