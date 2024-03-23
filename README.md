@@ -55,6 +55,12 @@ Here are some examples of basic and advanced workflows supported by Fooocus Node
 
 ![basic](/workflow/inpaint&outpaint.png)
 
+## Credits
+
+- [Fooocus](https://github.com/lllyasviel/Fooocus)
+- [ComfyUI-Easy-Use](https://github.com/yolain/ComfyUI-Easy-Use)
+- [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+
 # Acknowledgments
 
 This project builds upon and extends the original work found at [ComfyUI_Fooocus](https://github.com/17Retoucher/ComfyUI_Fooocus).
