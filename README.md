@@ -11,10 +11,16 @@
 1. Navigate to the cloned repo e.g. `custom_nodes/Fooocus_Nodes`
 2. `git pull`
 
-# Enable Model Cache
+# Model Cache
 
-(RAM > 40GB)
-/py/modules/config.py/use_model_cache = True
+For improved model switch performance with RAM > 40GB, you can enable model caching:
+
+Open /py/modules/config.py
+Set use_model_cache to True:
+
+```
+use_model_cache = True
+```
 
 # Features
 
@@ -26,6 +32,8 @@
 - [x] Fooocus Styles&PromptExpansion
 
 # Workflows
+
+Here are some examples of basic and advanced workflows supported by Fooocus Nodes:
 
 ## Basic
 
@@ -46,3 +54,7 @@
 ## Inpaint&Outpaint
 
 ![basic](/workflow/inpaint&outpaint.png)
+
+# Acknowledgments
+
+This project builds upon and extends the original work found at [ComfyUI_Fooocus](https://github.com/17Retoucher/ComfyUI_Fooocus).
