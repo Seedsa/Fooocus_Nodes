@@ -32,6 +32,7 @@ BASE_RESOLUTIONS = [
 wildcard_filenames = []
 paths_checkpoints = folder_paths.get_folder_paths('checkpoints')[0]
 path_checkpoints = folder_paths.get_folder_paths('checkpoints')[0]
+paths_loras = folder_paths.get_folder_paths('loras')[0]
 path_loras = folder_paths.get_folder_paths('loras')[0]
 path_embeddings = folder_paths.get_folder_paths('embeddings')[0]
 path_vae_approx = folder_paths.get_folder_paths('vae_approx')[0]
