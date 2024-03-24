@@ -241,7 +241,6 @@ class FooocusPreKSampler:
             style_selections = []
 
         image_number = pipe["image_number"]
-        output_format = 'png'
         image_seed = kwargs.get("seed")
         read_wildcards_in_order = False
         sharpness = kwargs.get('sharpness')
@@ -251,8 +250,6 @@ class FooocusPreKSampler:
         refiner_switch = pipe["refiner_switch"]
         loras = pipe["optional_lora_stack"]
         outpaint_selections = []
-        disable_preview = True
-        disable_intermediate_results = False
         disable_seed_increment = False
         adm_scaler_positive = kwargs.pop("adm_scaler_positive")
         adm_scaler_negative = kwargs.pop("adm_scaler_negative")
@@ -260,8 +257,6 @@ class FooocusPreKSampler:
         adaptive_cfg = kwargs.pop("adaptive_cfg")
         sampler_name = pipe["sampler_name"]
         scheduler_name = pipe["scheduler"]
-        canny_low_threshold = 64
-        canny_high_threshold = 128
         refiner_swap_method = pipe["refiner_swap_method"]
         controlnet_softness = kwargs.pop("controlnet_softness")
         freeu_enabled = kwargs.pop("freeu_enabled")
@@ -322,7 +317,6 @@ class FooocusPreKSampler:
 
         initial_latent = None
         denoising_strength = kwargs.pop("denoise")
-        tiled = False
 
         height = pipe["latent_height"]
         width = pipe["latent_width"]
@@ -353,10 +347,6 @@ class FooocusPreKSampler:
         inpaint_mask = None
         inpaint_head_model_path = None
         use_synthetic_refiner = False
-
-        controlnet_canny_path = None
-        controlnet_cpds_path = None
-        clip_vision_path, ip_negative_path, ip_adapter_path, ip_adapter_face_path = None, None, None, None
 
         seed = int(image_seed)
         print(f'[Parameters] Seed = {seed}')
@@ -402,7 +392,7 @@ class FooocusPreKSampler:
                 print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
                 if refiner_model_name == "None":
                     use_synthetic_refiner = True
-                    refiner_switch = 0.5
+                    refiner_switch = 0.8
             else:
                 inpaint_head_model_path, inpaint_patch_model_path = None, None
                 print(f'[Inpaint] Parameterized inpaint is disabled.')
@@ -826,14 +816,16 @@ class FooocusUpscale:
             print(f'Image upscaled.')
             f = upscale
             shape_ceil = get_shape_ceil(H * f, W * f)
+
             if shape_ceil < 1024:
                 print(f'[Upscale] Image is resized because it is too small.')
                 uov_input_image = set_image_shape_ceil(uov_input_image, 1024)
                 shape_ceil = 1024
             else:
-                uov_input_image = resample_image(
-                    uov_input_image, width=W * f, height=H * f)
+                uov_input_image = resample_image(uov_input_image, width=W * f, height=H * f)
+
             image_is_super_large = shape_ceil > 2800
+
             if fast:
                 direct_return = True
             elif image_is_super_large:
@@ -852,8 +844,11 @@ class FooocusUpscale:
                 all_imgs.extend(uov_input_image)
                 continue
 
+            tiled = True
+
             initial_pixels = core.numpy_to_pytorch(uov_input_image)
             log_node_info('VAE encoding ...')
+
             candidate_vae, _ = pipeline.get_candidate_vae(
                 steps=pipe["steps"],
                 switch=pipe["switch"],
@@ -890,9 +885,10 @@ class FooocusUpscale:
                 scheduler_name=pipe["scheduler"],
                 latent=initial_latent,
                 denoise=denoise,
-                tiled=True,
+                tiled=tiled,
                 cfg_scale=pipe["cfg"],
                 refiner_swap_method=pipe["refiner_swap_method"],
+                disable_preview=True
             )
 
             if inpaint_worker.current_task is not None:
