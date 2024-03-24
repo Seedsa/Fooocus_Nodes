@@ -3,7 +3,8 @@ import sys
 
 sys.path.append(os.path.dirname(__file__))
 modules_path = os.path.dirname(os.path.realpath(__file__))
-
+from modules.patch import PatchSettings, patch_settings, patch_all
+patch_all()
 import numpy as np
 import folder_paths
 from comfy.samplers import *
@@ -11,7 +12,7 @@ import modules.config
 import modules.flags
 import modules.default_pipeline as pipeline
 import modules.core as core
-from modules.sdxl_styles import apply_style, apply_wildcards, fooocus_expansion
+from modules.sdxl_styles import apply_style, apply_wildcards, fooocus_expansion, apply_arrays
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
 import modules.advanced_parameters as advanced_parameters
@@ -43,6 +44,9 @@ MIN_SEED = 0
 MAX_SEED = 2**63 - 1
 
 # lora
+
+pid = os.getpid()
+print(f'Started worker with PID {pid}')
 
 
 class FooocusLoraStack:
@@ -235,16 +239,33 @@ class FooocusPreKSampler:
             style_selections = fooocus_styles
         else:
             style_selections = []
+
         image_number = pipe["image_number"]
+        output_format = 'png'
         image_seed = kwargs.get("seed")
+        read_wildcards_in_order = False
         sharpness = kwargs.get('sharpness')
         guidance_scale = kwargs.get("cfg")
-        freeu_enabled = kwargs.get("freeu_enabled")
         base_model_name = pipe["base_model_name"]
         refiner_model_name = pipe["refiner_model_name"]
         refiner_switch = pipe["refiner_switch"]
         loras = pipe["optional_lora_stack"]
         outpaint_selections = []
+        disable_preview = True
+        disable_intermediate_results = False
+        disable_seed_increment = False
+        adm_scaler_positive = kwargs.pop("adm_scaler_positive")
+        adm_scaler_negative = kwargs.pop("adm_scaler_negative")
+        adm_scaler_end = kwargs.pop("adm_scaler_end")
+        adaptive_cfg = kwargs.pop("adaptive_cfg")
+        sampler_name = pipe["sampler_name"]
+        scheduler_name = pipe["scheduler"]
+        canny_low_threshold = 64
+        canny_high_threshold = 128
+        refiner_swap_method = pipe["refiner_swap_method"]
+        controlnet_softness = kwargs.pop("controlnet_softness")
+        freeu_enabled = kwargs.pop("freeu_enabled")
+
         base_model_additional_loras = []
 
         if fooocus_expansion in style_selections:
@@ -261,7 +282,7 @@ class FooocusPreKSampler:
             print(f'Refiner disabled because base model and refiner are same.')
             refiner_model_name = 'None'
 
-        steps = kwargs.get("steps")
+        steps = kwargs.pop("steps")
 
         if pipe["sampler_name"] == "lcm":
             print('Enter LCM mode.')
@@ -279,34 +300,35 @@ class FooocusPreKSampler:
             modules.patch.negative_adm_scale = 1, 0
             modules.patch.adm_scaler_end = 0.0
 
-        advanced_parameters.controlnet_softness = kwargs.pop(
-            "controlnet_softness")
-
-        modules.patch.adaptive_cfg = kwargs.pop("adaptive_cfg")
-        print(f'[Parameters] Adaptive CFG = {modules.patch.adaptive_cfg}')
-
-        modules.patch.sharpness = sharpness
-        print(f'[Parameters] Sharpness = {modules.patch.sharpness}')
-
-        modules.patch.positive_adm_scale = kwargs.pop("adm_scaler_positive")
-        modules.patch.negative_adm_scale = kwargs.pop("adm_scaler_negative")
-        modules.patch.adm_scaler_end = kwargs.pop("adm_scaler_end")
+        print(f'[Parameters] Adaptive CFG = {adaptive_cfg}')
+        print(f'[Parameters] Sharpness = {sharpness}')
+        print(f'[Parameters] ControlNet Softness = {controlnet_softness}')
         print(f'[Parameters] ADM Scale = '
-              f'{modules.patch.positive_adm_scale} : '
-              f'{modules.patch.negative_adm_scale} : '
-              f'{modules.patch.adm_scaler_end}')
+              f'{adm_scaler_positive} : '
+              f'{adm_scaler_negative} : '
+              f'{adm_scaler_end}')
+
+        patch_settings[pid] = PatchSettings(
+            sharpness,
+            adm_scaler_end,
+            adm_scaler_positive,
+            adm_scaler_negative,
+            controlnet_softness,
+            adaptive_cfg
+        )
 
         cfg_scale = float(guidance_scale)
         print(f'[Parameters] CFG = {cfg_scale}')
 
         initial_latent = None
         denoising_strength = kwargs.pop("denoise")
+        tiled = False
 
         height = pipe["latent_height"]
         width = pipe["latent_width"]
+        width, height = int(width), int(height)
 
         skip_prompt_processing = False
-        refiner_swap_method = pipe["refiner_swap_method"]
 
         inpaint_worker.current_task = None
         inpaint_parameterized = False
@@ -331,6 +353,10 @@ class FooocusPreKSampler:
         inpaint_mask = None
         inpaint_head_model_path = None
         use_synthetic_refiner = False
+
+        controlnet_canny_path = None
+        controlnet_cpds_path = None
+        clip_vision_path, ip_negative_path, ip_adapter_path, ip_adapter_face_path = None, None, None, None
 
         seed = int(image_seed)
         print(f'[Parameters] Seed = {seed}')
@@ -389,10 +415,9 @@ class FooocusPreKSampler:
         log_node_info('Initializing ...')
 
         if not skip_prompt_processing:
-            prompts = remove_empty_str(
-                [safe_str(p) for p in prompt.splitlines()], default='')
-            negative_prompts = remove_empty_str(
-                [safe_str(p) for p in negative_prompt.splitlines()], default='')
+
+            prompts = remove_empty_str([safe_str(p) for p in prompt.splitlines()], default='')
+            negative_prompts = remove_empty_str([safe_str(p) for p in negative_prompt.splitlines()], default='')
 
             prompt = prompts[0]
             negative_prompt = negative_prompts[0]
@@ -402,8 +427,7 @@ class FooocusPreKSampler:
                 use_expansion = False
 
             extra_positive_prompts = prompts[1:] if len(prompts) > 1 else []
-            extra_negative_prompts = negative_prompts[1:] if len(
-                negative_prompts) > 1 else []
+            extra_negative_prompts = negative_prompts[1:] if len(negative_prompts) > 1 else []
 
             log_node_info('Loading models ...')
             pipeline.refresh_everything(
@@ -423,18 +447,19 @@ class FooocusPreKSampler:
 
             tasks = []
             for i in range(image_number):
-                # randint is inclusive, % is not
-                task_seed = (seed + i) % (MAX_SEED + 1)
+                if disable_seed_increment:
+                    task_seed = seed % (MAX_SEED + 1)
+                else:
+                    task_seed = (seed + i) % (MAX_SEED + 1)  # randint is inclusive, % is not
+
                 # may bind to inpaint noise in the future
                 task_rng = random.Random(task_seed)
 
-                task_prompt = apply_wildcards(prompt, task_rng)
-                task_negative_prompt = apply_wildcards(
-                    negative_prompt, task_rng)
-                task_extra_positive_prompts = [apply_wildcards(
-                    pmt, task_rng) for pmt in extra_positive_prompts]
-                task_extra_negative_prompts = [apply_wildcards(
-                    pmt, task_rng) for pmt in extra_negative_prompts]
+                task_prompt = apply_wildcards(prompt, task_rng, i, read_wildcards_in_order)
+                task_prompt = apply_arrays(task_prompt, i)
+                task_negative_prompt = apply_wildcards(negative_prompt, task_rng, i, read_wildcards_in_order)
+                task_extra_positive_prompts = [apply_wildcards(pmt, task_rng, i, read_wildcards_in_order) for pmt in extra_positive_prompts]
+                task_extra_negative_prompts = [apply_wildcards(pmt, task_rng, i, read_wildcards_in_order) for pmt in extra_negative_prompts]
 
                 positive_basic_workloads = []
                 negative_basic_workloads = []
@@ -455,10 +480,8 @@ class FooocusPreKSampler:
                 positive_basic_workloads = positive_basic_workloads + task_extra_positive_prompts
                 negative_basic_workloads = negative_basic_workloads + task_extra_negative_prompts
 
-                positive_basic_workloads = remove_empty_str(
-                    positive_basic_workloads, default=task_prompt)
-                negative_basic_workloads = remove_empty_str(
-                    negative_basic_workloads, default=task_negative_prompt)
+                positive_basic_workloads = remove_empty_str(positive_basic_workloads, default=task_prompt)
+                negative_basic_workloads = remove_empty_str(negative_basic_workloads, default=task_negative_prompt)
 
                 tasks.append(dict(
                     task_seed=task_seed,
@@ -471,34 +494,28 @@ class FooocusPreKSampler:
                     uc=None,
                     positive_top_k=len(positive_basic_workloads),
                     negative_top_k=len(negative_basic_workloads),
-                    log_positive_prompt='\n'.join(
-                        [task_prompt] + task_extra_positive_prompts),
-                    log_negative_prompt='\n'.join(
-                        [task_negative_prompt] + task_extra_negative_prompts),
+                    log_positive_prompt='\n'.join([task_prompt] + task_extra_positive_prompts),
+                    log_negative_prompt='\n'.join([task_negative_prompt] + task_extra_negative_prompts),
                 ))
 
             if use_expansion:
                 for i, t in enumerate(tasks):
                     log_node_info(f'Preparing Fooocus text #{i + 1} ...')
-                    expansion = pipeline.final_expansion(
-                        t['task_prompt'], t['task_seed'])
+                    expansion = pipeline.final_expansion(t['task_prompt'], t['task_seed'])
                     print(f'[Prompt Expansion] {expansion}')
                     t['expansion'] = expansion
-                    # Deep copy.
-                    t['positive'] = copy.deepcopy(t['positive']) + [expansion]
+                    t['positive'] = copy.deepcopy(t['positive']) + [expansion]  # Deep copy.
 
             for i, t in enumerate(tasks):
                 log_node_info(f'Encoding positive #{i + 1} ...')
-                t['c'] = pipeline.clip_encode(
-                    texts=t['positive'], pool_top_k=t['positive_top_k'])
+                t['c'] = pipeline.clip_encode(texts=t['positive'], pool_top_k=t['positive_top_k'])
 
             for i, t in enumerate(tasks):
                 if abs(float(cfg_scale) - 1.0) < 1e-4:
                     t['uc'] = pipeline.clone_cond(t['c'])
                 else:
                     log_node_info(f'Encoding negative #{i + 1} ...')
-                    t['uc'] = pipeline.clip_encode(
-                        texts=t['negative'], pool_top_k=t['negative_top_k'])
+                    t['uc'] = pipeline.clip_encode(texts=t['negative'], pool_top_k=t['negative_top_k'])
 
         if len(goals) > 0:
             log_node_info('Image processing ...')
@@ -523,50 +540,44 @@ class FooocusPreKSampler:
                 inpaint_mask = inpaint_mask[:, :, 0]
                 H, W, C = inpaint_image.shape
                 if 'top' in outpaint_selections:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode='edge')
+                    inpaint_image = np.pad(inpaint_image, [[int(H * 0.3), 0], [0, 0], [0, 0]], mode='edge')
                     inpaint_mask = np.pad(inpaint_mask, [[int(H * 0.3), 0], [0, 0]], mode='constant',
                                           constant_values=255)
                 if 'bottom' in outpaint_selections:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode='edge')
+                    inpaint_image = np.pad(inpaint_image, [[0, int(H * 0.3)], [0, 0], [0, 0]], mode='edge')
                     inpaint_mask = np.pad(inpaint_mask, [[0, int(H * 0.3)], [0, 0]], mode='constant',
                                           constant_values=255)
 
                 H, W, C = inpaint_image.shape
                 if 'left' in outpaint_selections:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[0, 0], [int(H * 0.3), 0], [0, 0]], mode='edge')
-                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [int(H * 0.3), 0]], mode='constant',
+                    inpaint_image = np.pad(inpaint_image, [[0, 0], [int(W * 0.3), 0], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [int(W * 0.3), 0]], mode='constant',
                                           constant_values=255)
                 if 'right' in outpaint_selections:
-                    inpaint_image = np.pad(
-                        inpaint_image, [[0, 0], [0, int(H * 0.3)], [0, 0]], mode='edge')
-                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [0, int(H * 0.3)]], mode='constant',
+                    inpaint_image = np.pad(inpaint_image, [[0, 0], [0, int(W * 0.3)], [0, 0]], mode='edge')
+                    inpaint_mask = np.pad(inpaint_mask, [[0, 0], [0, int(W * 0.3)]], mode='constant',
                                           constant_values=255)
+
                 inpaint_image = np.ascontiguousarray(inpaint_image.copy())
                 inpaint_mask = np.ascontiguousarray(inpaint_mask.copy())
-                denoising_strength = 1.0
+                inpaint_strength = 1.0
                 inpaint_respective_field = 1.0
+
+            denoising_strength = inpaint_strength
 
             inpaint_worker.current_task = inpaint_worker.InpaintWorker(
                 image=inpaint_image,
                 mask=inpaint_mask,
                 use_fill=denoising_strength > 0.99,
-                k=inpaint_respective_field,
+                k=inpaint_respective_field
             )
 
             log_node_info('VAE Inpaint encoding ...')
 
-            inpaint_pixel_fill = core.numpy_to_pytorch(
-                inpaint_worker.current_task.interested_fill
-            )
-            inpaint_pixel_image = core.numpy_to_pytorch(
-                inpaint_worker.current_task.interested_image
-            )
-            inpaint_pixel_mask = core.numpy_to_pytorch(
-                inpaint_worker.current_task.interested_mask
-            )
+            inpaint_pixel_fill = core.numpy_to_pytorch(inpaint_worker.current_task.interested_fill)
+            inpaint_pixel_image = core.numpy_to_pytorch(inpaint_worker.current_task.interested_image)
+            inpaint_pixel_mask = core.numpy_to_pytorch(inpaint_worker.current_task.interested_mask)
+
             candidate_vae, candidate_vae_swap = pipeline.get_candidate_vae(
                 steps=steps,
                 switch=switch,
@@ -575,8 +586,10 @@ class FooocusPreKSampler:
             )
 
             latent_inpaint, latent_mask = core.encode_vae_inpaint(
-                mask=inpaint_pixel_mask, vae=candidate_vae, pixels=inpaint_pixel_image
-            )
+                mask=inpaint_pixel_mask,
+                vae=candidate_vae,
+                pixels=inpaint_pixel_image)
+
             latent_swap = None
             if candidate_vae_swap is not None:
                 log_node_info("VAE SD15 encoding ...")
@@ -590,16 +603,14 @@ class FooocusPreKSampler:
             ]
 
             inpaint_worker.current_task.load_latent(
-                latent_fill=latent_fill,
-                latent_mask=latent_mask,
-                latent_swap=latent_swap,
-            )
+                latent_fill=latent_fill, latent_mask=latent_mask, latent_swap=latent_swap)
+
             if inpaint_parameterized:
                 pipeline.final_unet = inpaint_worker.current_task.patch(
                     inpaint_head_model_path=inpaint_head_model_path,
                     inpaint_latent=latent_inpaint,
                     inpaint_latent_mask=latent_mask,
-                    model=pipeline.final_unet,
+                    model=pipeline.final_unet
                 )
 
             if not inpaint_disable_initial_latent:
@@ -608,8 +619,7 @@ class FooocusPreKSampler:
             B, C, H, W = latent_fill.shape
             height, width = H * 8, W * 8
             final_height, final_width = inpaint_worker.current_task.image.shape[:2]
-            print(
-                f'Final resolution is {str((final_height, final_width))}, latent is {str((height, width))}.')
+            print(f'Final resolution is {str((final_height, final_width))}, latent is {str((height, width))}.')
 
         if freeu_enabled:
             print(f'FreeU is enabled!')
@@ -711,6 +721,7 @@ class FooocusKsampler:
             try:
                 print(f"Current Task {current_task_id + 1} ……")
                 positive_cond, negative_cond = task['c'], task['uc']
+
                 if "cn_tasks" in pipe and len(pipe["cn_tasks"]) > 0:
                     for cn_path, cn_img, cn_stop, cn_weight in pipe["cn_tasks"]:
                         positive_cond, negative_cond = core.apply_controlnet(
@@ -733,6 +744,7 @@ class FooocusKsampler:
                     tiled=False,
                     cfg_scale=pipe["cfg"],
                     refiner_swap_method=pipe["refiner_swap_method"],
+                    disable_preview=True
                 )
 
                 if inpaint_worker.current_task is not None:

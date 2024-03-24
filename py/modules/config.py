@@ -29,8 +29,8 @@ BASE_RESOLUTIONS = [
     (1536, 768),
     ("自定义", "自定义")
 ]
-
-
+wildcard_filenames = []
+paths_checkpoints = folder_paths.get_folder_paths('checkpoints')[0]
 path_checkpoints = folder_paths.get_folder_paths('checkpoints')[0]
 path_loras = folder_paths.get_folder_paths('loras')[0]
 path_embeddings = folder_paths.get_folder_paths('embeddings')[0]
@@ -42,6 +42,9 @@ path_fooocus_expansion = folder_paths.models_dir + "/prompt_expansion/fooocus_ex
 path_inpaint = folder_paths.models_dir + "/inpaint"
 path_styles = os.path.join(
     Path(__file__).parent.parent.parent, "sdxl_styles")
+path_wildcards = os.path.join(
+    Path(__file__).parent.parent.parent, "wildcards")
+
 
 use_model_cache = False
 default_refiner_model_name = 'None'
@@ -68,6 +71,7 @@ default_loras = [
         1.0
     ]
 ]
+default_loras = [(y[0], y[1], y[2]) if len(y) == 3 else (True, y[0], y[1]) for y in default_loras]
 
 
 def downloading_inpaint_models(v):
