@@ -40,6 +40,8 @@ path_clip_vision = folder_paths.get_folder_paths('clip_vision')[0]
 path_upscale_models = folder_paths.get_folder_paths('upscale_models')[0]
 path_fooocus_expansion = folder_paths.models_dir + "/prompt_expansion/fooocus_expansion"
 path_inpaint = folder_paths.models_dir + "/inpaint"
+path_ipadapter = folder_paths.models_dir + "/ipadapter"
+
 path_styles = os.path.join(
     Path(__file__).parent.parent.parent, "sdxl_styles")
 path_wildcards = os.path.join(
@@ -145,28 +147,28 @@ def downloading_ip_adapters(v):
 
     load_file_from_url(
         url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors',
-        model_dir=path_controlnet,
+        model_dir=path_ipadapter,
         file_name='fooocus_ip_negative.safetensors'
     )
-    results += [os.path.join(path_controlnet,
+    results += [os.path.join(path_ipadapter,
                              'fooocus_ip_negative.safetensors')]
 
     if v == 'ip':
         load_file_from_url(
             url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin',
-            model_dir=path_controlnet,
+            model_dir=path_ipadapter,
             file_name='ip-adapter-plus_sdxl_vit-h.bin'
         )
-        results += [os.path.join(path_controlnet,
+        results += [os.path.join(path_ipadapter,
                                  'ip-adapter-plus_sdxl_vit-h.bin')]
 
     if v == 'face':
         load_file_from_url(
             url='https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin',
-            model_dir=path_controlnet,
+            model_dir=path_ipadapter,
             file_name='ip-adapter-plus-face_sdxl_vit-h.bin'
         )
-        results += [os.path.join(path_controlnet,
+        results += [os.path.join(path_ipadapter,
                                  'ip-adapter-plus-face_sdxl_vit-h.bin')]
 
     return results
