@@ -550,10 +550,8 @@ class FooocusPreKSampler:
 
                 inpaint_image = np.ascontiguousarray(inpaint_image.copy())
                 inpaint_mask = np.ascontiguousarray(inpaint_mask.copy())
-                inpaint_strength = 1.0
+                denoising_strength = 1.0
                 inpaint_respective_field = 1.0
-
-            denoising_strength = inpaint_strength
 
             inpaint_worker.current_task = inpaint_worker.InpaintWorker(
                 image=inpaint_image,
