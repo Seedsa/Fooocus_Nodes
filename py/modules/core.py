@@ -59,6 +59,7 @@ class StableDiffusionModel:
     @torch.no_grad()
     @torch.inference_mode()
     def refresh_loras(self, loras):
+        import folder_paths
         assert isinstance(loras, list)
 
         if self.visited_loras == str(loras):
@@ -80,7 +81,7 @@ class StableDiffusionModel:
             if os.path.exists(filename):
                 lora_filename = filename
             else:
-                lora_filename = get_file_from_folder_list(filename, modules.config.paths_loras)
+                lora_filename = folder_paths.get_full_path('loras', filename)
 
             if not os.path.exists(lora_filename):
                 print(f'Lora file not found: {lora_filename}')

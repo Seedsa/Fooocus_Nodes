@@ -36,7 +36,7 @@ if (!customLinkColors["STRING"] || !LGraphCanvas.link_type_colors["STRING"]) {
 }
 
 localStorage.setItem(
-  "Comfy.Settings.easyUse.customLinkColors",
+  "Comfy.Settings.fooocus.customLinkColors",
   JSON.stringify(customLinkColors)
 );
 

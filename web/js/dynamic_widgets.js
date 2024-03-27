@@ -193,14 +193,7 @@ function getSetters(node) {
   if (node.widgets)
     for (const w of node.widgets) {
       if (getSetWidgets.includes(w.name)) {
-        if (node.comfyClass.indexOf("easy XYInputs:") != -1)
-          widgetLogic3(node, w);
-        else if (
-          w.name == "sampler_name" &&
-          node.comfyClass == "easy preSamplingSdTurbo"
-        )
-          widgetLogic2(node, w);
-        else widgetLogic(node, w);
+        widgetLogic(node, w);
         let widgetValue = w.value;
 
         // Define getters and setters for widget values
@@ -211,14 +204,7 @@ function getSetters(node) {
           set(newVal) {
             if (newVal !== widgetValue) {
               widgetValue = newVal;
-              if (node.comfyClass.indexOf("easy XYInputs:") != -1)
-                widgetLogic3(node, w);
-              else if (
-                w.name == "sampler_name" &&
-                node.comfyClass == "easy preSamplingSdTurbo"
-              )
-                widgetLogic2(node, w);
-              else widgetLogic(node, w);
+              widgetLogic(node, w);
             }
           },
         });
