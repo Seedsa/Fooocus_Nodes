@@ -61,7 +61,6 @@ def assert_model_integrity():
 def refresh_base_model(name):
     global model_base
     import folder_paths
-
     filename = folder_paths.get_full_path("checkpoints", name)
 
     if model_base.filename == filename:
@@ -77,8 +76,8 @@ def refresh_base_model(name):
 @torch.inference_mode()
 def refresh_refiner_model(name):
     global model_refiner
-
-    filename = get_file_from_folder_list(name, modules.config.paths_checkpoints)
+    import folder_paths
+    filename = folder_paths.get_full_path("checkpoints", name)
 
     if model_refiner.filename == filename:
         return
