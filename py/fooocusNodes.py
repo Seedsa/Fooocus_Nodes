@@ -18,7 +18,7 @@ import extras.face_crop as face_crop
 import modules.advanced_parameters as advanced_parameters
 import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
-from nodes import SaveImage, PreviewImage
+from nodes import SaveImage, PreviewImage, MAX_RESOLUTION, NODE_CLASS_MAPPINGS as ALL_NODE_CLASS_MAPPINGS
 from modules.util import (
     remove_empty_str,
     HWC3,
@@ -28,7 +28,7 @@ from modules.util import (
     resample_image,
 )
 import ldm_patched.modules.model_management as model_management
-
+from libs.utils import easySave
 from modules.upscaler import perform_upscale
 import modules.inpaint_worker as inpaint_worker
 import modules.patch
@@ -649,24 +649,26 @@ class FooocusPreKSampler:
             print('Using lcm scheduler.')
 
         log_node_info('Moving model to GPU ...')
-
-        pipe.update(
-            {
-                "tasks": tasks,
-                "positive": positive,
-                "seed": seed,
-                "sampler_name": final_sampler_name,
-                "scheduler_name": final_scheduler_name,
-                "negative": negative,
-                "denoise": denoising_strength,
-                "latent": initial_latent,
-                "model": pipeline.final_unet,
-                "latent_height": height,
-                "latent_width": width,
-                "switch": switch,
-            }
-        )
-        new_pipe = pipe.copy()
+        new_pipe = {
+            "tasks": tasks,
+            "positive": positive,
+            "negative": negative,
+            "seed": seed,
+            "steps": steps,
+            "cfg": cfg_scale,
+            "switch": switch,
+            "refiner_swap_method": refiner_swap_method,
+            "sampler_name": final_sampler_name,
+            "scheduler": final_scheduler_name,
+            "denoise": denoising_strength,
+            "latent": initial_latent,
+            "model": pipeline.final_unet,
+            "latent_height": height,
+            "latent_width": width,
+            "switch": switch,
+            "clip": pipeline.final_clip,
+            "vae": pipeline.final_vae,
+        }
         del pipe
         return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae, positive, negative)}
 
@@ -746,6 +748,12 @@ class FooocusKsampler:
             except model_management.InterruptProcessingException as e:
                 print('task stopped')
 
+        new_pipe = {
+            **pipe,
+            "images": all_imgs,
+        }
+        del pipe
+
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
@@ -757,9 +765,9 @@ class FooocusKsampler:
                 all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (pipe, all_imgs)}
+            return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
 
-        results["result"] = pipe, all_imgs
+        results["result"] = new_pipe, all_imgs
         return results
 
 
@@ -790,7 +798,7 @@ class FooocusUpscale:
 
     def FooocusUpscale(self, pipe, image, upscale, denoise, fast, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
         all_imgs = []
-        all_steps = pipe["steps"] * len(image)
+        all_steps = steps * len(image)
         pbar = comfy.utils.ProgressBar(all_steps)
         log_node_info('Downloading upscale models ...')
         modules.config.downloading_upscale_model()
@@ -848,7 +856,7 @@ class FooocusUpscale:
             log_node_info('VAE encoding ...')
 
             candidate_vae, _ = pipeline.get_candidate_vae(
-                steps=pipe["steps"],
+                steps=steps,
                 switch=pipe["switch"],
                 denoise=denoise,
                 refiner_swap_method=pipe["refiner_swap_method"]
@@ -865,7 +873,6 @@ class FooocusUpscale:
             if pipe['tasks'] is not None and len(pipe['tasks']) == len(image):
                 task = pipe["tasks"][image_id]
                 positive_cond, negative_cond = task['c'], task['uc']
-                print('use pipe tasks cond')
             else:
                 positive_cond = pipe["positive"]
                 negative_cond = pipe["negative"]
@@ -896,6 +903,12 @@ class FooocusUpscale:
             imgs = [np.array(img).astype(np.float32) / 255.0 for img in imgs]
             imgs = [torch.from_numpy(img) for img in imgs]
             all_imgs.extend(imgs)
+
+        new_pipe = {
+            **pipe,
+            "images": all_imgs,
+        }
+        del pipe
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
@@ -907,9 +920,9 @@ class FooocusUpscale:
                 all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (pipe, all_imgs)}
+            return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
 
-        results["result"] = pipe, all_imgs
+        results["result"] = new_pipe, all_imgs
         return results
 
 
@@ -1123,6 +1136,284 @@ class FooocusPipeOut:
         return pipe, model, pos, neg, latent, vae, switch
 
 
+class preDetailerFix:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "pipe": ("PIPE_LINE",),
+            "guide_size": ("FLOAT", {"default": 384, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
+            "guide_size_for": ("BOOLEAN", {"default": True, "label_on": "bbox", "label_off": "crop_region"}),
+            "max_size": ("FLOAT", {"default": 1024, "min": 64, "max": MAX_RESOLUTION, "step": 8}),
+            "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+            "steps": ("INT", {"default": 20, "min": 1, "max": 10000}),
+            "cfg": ("FLOAT", {"default": 8.0, "min": 0.0, "max": 100.0}),
+            "sampler_name": (comfy.samplers.KSampler.SAMPLERS,),
+            "scheduler": (comfy.samplers.KSampler.SCHEDULERS,),
+            "denoise": ("FLOAT", {"default": 0.5, "min": 0.0001, "max": 1.0, "step": 0.01}),
+            "feather": ("INT", {"default": 5, "min": 0, "max": 100, "step": 1}),
+            "noise_mask": ("BOOLEAN", {"default": True, "label_on": "enabled", "label_off": "disabled"}),
+            "force_inpaint": ("BOOLEAN", {"default": True, "label_on": "enabled", "label_off": "disabled"}),
+            "drop_size": ("INT", {"min": 1, "max": MAX_RESOLUTION, "step": 1, "default": 10}),
+            "wildcard": ("STRING", {"multiline": True, "dynamicPrompts": False}),
+            "cycle": ("INT", {"default": 1, "min": 1, "max": 10, "step": 1}),
+        },
+            "optional": {
+                "bbox_segm_pipe": ("PIPE_LINE",),
+                "sam_pipe": ("PIPE_LINE",),
+                "optional_image": ("IMAGE",),
+        },
+        }
+
+    RETURN_TYPES = ("PIPE_LINE",)
+    RETURN_NAMES = ("pipe",)
+    OUTPUT_IS_LIST = (False,)
+    FUNCTION = "doit"
+
+    CATEGORY = "Fooocus/Fix"
+
+    def doit(self, pipe, guide_size, guide_size_for, max_size, seed, steps, cfg, sampler_name, scheduler, denoise, feather, noise_mask, force_inpaint, drop_size, wildcard, cycle, bbox_segm_pipe=None, sam_pipe=None, optional_image=None):
+        tasks = pipe["tasks"] if "tasks" in pipe else None
+        if tasks is None:
+            raise Exception(f"[ERROR] pipe['tasks'] is missing")
+        model = pipe["model"] if "model" in pipe else None
+        if model is None:
+            raise Exception(f"[ERROR] pipe['model'] is missing")
+        clip = pipe["clip"] if "clip" in pipe else None
+        if clip is None:
+            raise Exception(f"[ERROR] pipe['clip'] is missing")
+        vae = pipe["vae"] if "vae" in pipe else None
+        if vae is None:
+            raise Exception(f"[ERROR] pipe['vae'] is missing")
+        if optional_image is not None:
+            images = optional_image
+        else:
+            images = pipe["images"] if "images" in pipe else None
+            if images is None:
+                raise Exception(f"[ERROR] pipe['image'] is missing")
+        bbox_segm_pipe = bbox_segm_pipe or (pipe["bbox_segm_pipe"] if pipe and "bbox_segm_pipe" in pipe else None)
+        if bbox_segm_pipe is None:
+            raise Exception(f"[ERROR] bbox_segm_pipe or pipe['bbox_segm_pipe'] is missing")
+        sam_pipe = sam_pipe or (pipe["sam_pipe"] if pipe and "sam_pipe" in pipe else None)
+        if sam_pipe is None:
+            raise Exception(f"[ERROR] sam_pipe or pipe['sam_pipe'] is missing")
+
+        loader_settings = pipe["loader_settings"] if "loader_settings" in pipe else {}
+        new_pipe = {
+            **pipe,
+            "tasks": tasks,
+            "images": images,
+            "model": model,
+            "clip": clip,
+            "vae": vae,
+            "seed": seed,
+            "bbox_segm_pipe": bbox_segm_pipe,
+            "sam_pipe": sam_pipe,
+            "loader_settings": loader_settings,
+            "detail_fix_settings": {
+                "guide_size": guide_size,
+                "guide_size_for": guide_size_for,
+                "max_size": max_size,
+                "seed": seed,
+                "steps": steps,
+                "cfg": cfg,
+                "sampler_name": sampler_name,
+                "scheduler": scheduler,
+                "denoise": denoise,
+                "feather": feather,
+                "noise_mask": noise_mask,
+                "force_inpaint": force_inpaint,
+                "drop_size": drop_size,
+                "wildcard": wildcard,
+                "cycle": cycle
+            }
+        }
+
+        del bbox_segm_pipe
+        del sam_pipe
+
+        return (new_pipe,)
+
+
+class detailerFix:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "pipe": ("PIPE_LINE",),
+            "image_output": (["Hide", "Preview", "Save", "Hide/Save", "Sender", "Sender/Save"], {"default": "Preview"}),
+            "link_id": ("INT", {"default": 0, "min": 0, "max": sys.maxsize, "step": 1}),
+            "save_prefix": ("STRING", {"default": "ComfyUI"}),
+        },
+            "optional": {
+                "model": ("MODEL",),
+        },
+            "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID", }
+        }
+
+    RETURN_TYPES = ("PIPE_LINE", "IMAGE",)
+    RETURN_NAMES = ("pipe", "image")
+    OUTPUT_NODE = True
+    OUTPUT_IS_LIST = (False, False)
+    FUNCTION = "doit"
+
+    CATEGORY = "Fooocus/Fix"
+
+    def doit(self, pipe, image_output, link_id, save_prefix, model=None, prompt=None, extra_pnginfo=None, my_unique_id=None):
+
+        my_unique_id = int(my_unique_id)
+
+        model = model or (pipe["model"] if "model" in pipe else None)
+        if model is None:
+            raise Exception(f"[ERROR] model or pipe['model'] is missing")
+
+        bbox_segm_pipe = pipe["bbox_segm_pipe"] if pipe and "bbox_segm_pipe" in pipe else None
+        if bbox_segm_pipe is None:
+            raise Exception(f"[ERROR] bbox_segm_pipe or pipe['bbox_segm_pipe'] is missing")
+        sam_pipe = pipe["sam_pipe"] if "sam_pipe" in pipe else None
+        if sam_pipe is None:
+            raise Exception(f"[ERROR] sam_pipe or pipe['sam_pipe'] is missing")
+        bbox_detector_opt, bbox_threshold, bbox_dilation, bbox_crop_factor, segm_detector_opt = bbox_segm_pipe
+        sam_model_opt, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold, sam_mask_hint_use_negative = sam_pipe
+
+        detail_fix_settings = pipe["detail_fix_settings"] if "detail_fix_settings" in pipe else None
+        if detail_fix_settings is None:
+            raise Exception(f"[ERROR] detail_fix_settings or pipe['detail_fix_settings'] is missing")
+        tasks = pipe["tasks"]
+        image = pipe["images"]
+        clip = pipe["clip"]
+        vae = pipe["vae"]
+        seed = pipe["seed"]
+        loader_settings = pipe["loader_settings"] if "loader_settings" in pipe else {}
+        guide_size = pipe["detail_fix_settings"]["guide_size"]
+        guide_size_for = pipe["detail_fix_settings"]["guide_size_for"]
+        max_size = pipe["detail_fix_settings"]["max_size"]
+        steps = pipe["detail_fix_settings"]["steps"]
+        cfg = pipe["detail_fix_settings"]["cfg"]
+        sampler_name = pipe["detail_fix_settings"]["sampler_name"]
+        scheduler = pipe["detail_fix_settings"]["scheduler"]
+        denoise = pipe["detail_fix_settings"]["denoise"]
+        feather = pipe["detail_fix_settings"]["feather"]
+        noise_mask = pipe["detail_fix_settings"]["noise_mask"]
+        force_inpaint = pipe["detail_fix_settings"]["force_inpaint"]
+        drop_size = pipe["detail_fix_settings"]["drop_size"]
+        wildcard = pipe["detail_fix_settings"]["wildcard"]
+        cycle = pipe["detail_fix_settings"]["cycle"]
+
+        cls = ALL_NODE_CLASS_MAPPINGS["FaceDetailer"]
+        result_imgs = []
+        # 细节修复初始时间
+        start_time = int(time.time() * 1000)
+        for current_task_id, task in enumerate(tasks):
+            img = image[current_task_id]
+            result_img, result_cropped_enhanced, result_cropped_enhanced_alpha, result_mask, d_pipe, result_cnet_images = cls().doit(
+                [img], model, clip, vae, guide_size, guide_size_for, max_size, seed, steps, cfg, sampler_name,
+                scheduler,
+                task['c'], task['uc'], denoise, feather, noise_mask, force_inpaint,
+                bbox_threshold, bbox_dilation, bbox_crop_factor,
+                sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
+                sam_mask_hint_use_negative, drop_size, bbox_detector_opt, wildcard, cycle, sam_model_opt, segm_detector_opt,
+                detailer_hook=None)
+            result_imgs.extend(result_img)
+
+        # 细节修复结束时间
+        end_time = int(time.time() * 1000)
+
+        spent_time = '细节修复:' + str((end_time - start_time) / 1000) + '秒'
+
+        results = easySave(result_imgs, save_prefix, image_output, prompt, extra_pnginfo)
+        new_pipe = {
+            **pipe,
+            "tasks": tasks,
+            "images": result_imgs,
+            "model": model,
+            "clip": clip,
+            "vae": vae,
+            "seed": seed,
+            "wildcard": wildcard,
+            "bbox_segm_pipe": bbox_segm_pipe,
+            "sam_pipe": sam_pipe,
+
+            "loader_settings": {
+                **loader_settings,
+                "spent_time": spent_time
+            },
+            "detail_fix_settings": detail_fix_settings
+        }
+
+        del bbox_segm_pipe
+        del sam_pipe
+        del pipe
+
+        if image_output in ("Hide", "Hide/Save"):
+            return {"ui": {},
+                    "result": (new_pipe, result_imgs)}
+
+        if image_output in ("Sender", "Sender/Save"):
+            PromptServer.instance.send_sync("img-send", {"link_id": link_id, "images": results})
+
+        return {"ui": {"images": results}, "result": (new_pipe, result_imgs)}
+
+
+class ultralyticsDetectorForDetailerFix:
+    @classmethod
+    def INPUT_TYPES(s):
+        bboxs = ["bbox/" + x for x in folder_paths.get_filename_list("ultralytics_bbox")]
+        segms = ["segm/" + x for x in folder_paths.get_filename_list("ultralytics_segm")]
+        return {"required":
+                {"model_name": (bboxs + segms,),
+                 "bbox_threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                 "bbox_dilation": ("INT", {"default": 10, "min": -512, "max": 512, "step": 1}),
+                 "bbox_crop_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10, "step": 0.1}),
+                 }
+                }
+
+    RETURN_TYPES = ("PIPE_LINE",)
+    RETURN_NAMES = ("bbox_segm_pipe",)
+    FUNCTION = "doit"
+
+    CATEGORY = "Fooocus/Fix"
+
+    def doit(self, model_name, bbox_threshold, bbox_dilation, bbox_crop_factor):
+        if 'UltralyticsDetectorProvider' not in ALL_NODE_CLASS_MAPPINGS:
+            raise Exception(f"[ERROR] To use UltralyticsDetectorProvider, you need to install 'Impact Pack'")
+        cls = ALL_NODE_CLASS_MAPPINGS['UltralyticsDetectorProvider']
+        bbox_detector, segm_detector = cls().doit(model_name)
+        pipe = (bbox_detector, bbox_threshold, bbox_dilation, bbox_crop_factor, segm_detector)
+        return (pipe,)
+
+
+class samLoaderForDetailerFix:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "model_name": (folder_paths.get_filename_list("sams"),),
+                "device_mode": (["AUTO", "Prefer GPU", "CPU"], {"default": "AUTO"}),
+                "sam_detection_hint": (
+                    ["center-1", "horizontal-2", "vertical-2", "rect-4", "diamond-4", "mask-area", "mask-points",
+                     "mask-point-bbox", "none"],),
+                "sam_dilation": ("INT", {"default": 0, "min": -512, "max": 512, "step": 1}),
+                "sam_threshold": ("FLOAT", {"default": 0.93, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "sam_bbox_expansion": ("INT", {"default": 0, "min": 0, "max": 1000, "step": 1}),
+                "sam_mask_hint_threshold": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "sam_mask_hint_use_negative": (["False", "Small", "Outter"],),
+            }
+        }
+
+    RETURN_TYPES = ("PIPE_LINE",)
+    RETURN_NAMES = ("sam_pipe",)
+    FUNCTION = "doit"
+
+    CATEGORY = "Fooocus/Fix"
+
+    def doit(self, model_name, device_mode, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold, sam_mask_hint_use_negative):
+        if 'SAMLoader' not in ALL_NODE_CLASS_MAPPINGS:
+            raise Exception(f"[ERROR] To use SAMLoader, you need to install 'Impact Pack'")
+        cls = ALL_NODE_CLASS_MAPPINGS['SAMLoader']
+        (sam_model,) = cls().load_model(model_name, device_mode)
+        pipe = (sam_model, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold, sam_mask_hint_use_negative)
+        return (pipe,)
+
+
 NODE_CLASS_MAPPINGS = {
 
     "Fooocus Loader": FooocusLoader,
@@ -1134,7 +1425,12 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus ImagePrompt": FooocusImagePrompt,
     "Fooocus ApplyImagePrompt": FooocusApplyImagePrompt,
     "Fooocus Inpaint": FooocusInpaint,
-    "Fooocus PipeOut": FooocusPipeOut
+    "Fooocus PipeOut": FooocusPipeOut,
+    # fix
+    "Fooocus preDetailerFix": preDetailerFix,
+    "Fooocus ultralyticsDetectorPipe": ultralyticsDetectorForDetailerFix,
+    "Fooocus samLoaderPipe": samLoaderForDetailerFix,
+    "Fooocus detailerFix": detailerFix,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
