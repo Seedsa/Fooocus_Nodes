@@ -22,6 +22,9 @@ class EPS:
         noise += latent_image
         return noise
 
+    def inverse_noise_scaling(self, sigma, latent):
+        return latent
+
 
 class V_PREDICTION(EPS):
     def calculate_denoised(self, sigma, model_output, model_input):
