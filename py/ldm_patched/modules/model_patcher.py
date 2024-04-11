@@ -1,7 +1,7 @@
 import torch
 import copy
 import inspect
-
+import uuid
 import ldm_patched.modules.utils
 import ldm_patched.modules.model_management
 
@@ -24,6 +24,8 @@ class ModelPatcher:
             self.current_device = current_device
 
         self.weight_inplace_update = weight_inplace_update
+        self.model_lowvram = False
+        self.patches_uuid = uuid.uuid4()
 
     def model_size(self):
         if self.size > 0:
@@ -48,6 +50,19 @@ class ModelPatcher:
         if hasattr(other, 'model') and self.model is other.model:
             return True
         return False
+
+    def clone_has_same_weights(self, clone):
+        if not self.is_clone(clone):
+            return False
+
+        if len(self.patches) == 0 and len(clone.patches) == 0:
+            return True
+
+        if self.patches_uuid == clone.patches_uuid:
+            if len(self.patches) != len(clone.patches):
+                print("WARNING: something went wrong, same patch uuid but different length of patches.")
+            else:
+                return True
 
     def memory_required(self, input_shape):
         return self.model.memory_required(input_shape=input_shape)
@@ -344,7 +359,18 @@ class ModelPatcher:
 
         return weight
 
-    def unpatch_model(self, device_to=None):
+    def unpatch_model(self, device_to=None, unpatch_weights=True):
+        if unpatch_weights:
+            if self.model_lowvram:
+                for m in self.model.modules():
+                    if hasattr(m, "prev_comfy_cast_weights"):
+                        m.comfy_cast_weights = m.prev_comfy_cast_weights
+                        del m.prev_comfy_cast_weights
+                    m.weight_function = None
+                    m.bias_function = None
+
+                self.model_lowvram = False
+
         keys = list(self.backup.keys())
 
         if self.weight_inplace_update:
