@@ -3,7 +3,7 @@
 import ldm_patched.modules.sd
 import ldm_patched.modules.utils
 import ldm_patched.modules.model_base
-import ldm_patched.modules.model_management
+import comfy.model_management
 
 import ldm_patched.utils.path_utils
 import json
@@ -211,7 +211,7 @@ class CLIPSave:
                 for x in extra_pnginfo:
                     metadata[x] = json.dumps(extra_pnginfo[x])
 
-        ldm_patched.modules.model_management.load_models_gpu([clip.load_model()])
+        comfy.model_management.load_models_gpu([clip.load_model()])
         clip_sd = clip.get_sd()
 
         for prefix in ["clip_l.", "clip_g.", ""]:

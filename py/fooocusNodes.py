@@ -27,7 +27,6 @@ from modules.util import (
     get_shape_ceil,
     resample_image,
 )
-import ldm_patched.modules.model_management as model_management
 from libs.utils import easySave
 from modules.upscaler import perform_upscale
 import modules.inpaint_worker as inpaint_worker
@@ -745,7 +744,7 @@ class FooocusKsampler:
                         255.0 for img in imgs]
                 imgs = [torch.from_numpy(img) for img in imgs]
                 all_imgs.extend(imgs)
-            except model_management.InterruptProcessingException as e:
+            except Exception as e:
                 print('task stopped')
 
         new_pipe = {

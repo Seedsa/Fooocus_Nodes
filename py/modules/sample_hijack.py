@@ -1,6 +1,6 @@
 import torch
 import ldm_patched.modules.samplers
-import ldm_patched.modules.model_management
+import comfy.model_management
 
 from collections import namedtuple
 from ldm_patched.contrib.external_custom_sampler import SDTurboScheduler
@@ -137,7 +137,7 @@ def sample_hacked(model, noise, positive, negative, cfg, device, sampler, sigmas
         extra_args['model_options'] = {k: {} if k == 'transformer_options' else v for k, v in extra_args['model_options'].items()}
 
         models, inference_memory = get_additional_models(positive_refiner, negative_refiner, current_refiner.model_dtype())
-        ldm_patched.modules.model_management.load_models_gpu(
+        comfy.model_management.load_models_gpu(
             [current_refiner] + models,
             model.memory_required([noise.shape[0] * 2] + list(noise.shape[1:])) + inference_memory)
 

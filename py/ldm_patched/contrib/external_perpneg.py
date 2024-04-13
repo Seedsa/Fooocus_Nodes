@@ -1,7 +1,7 @@
 # https://github.com/comfyanonymous/ComfyUI/blob/master/nodes.py 
 
 import torch
-import ldm_patched.modules.model_management
+import comfy.model_management
 import ldm_patched.modules.sample
 import ldm_patched.modules.samplers
 import ldm_patched.modules.utils

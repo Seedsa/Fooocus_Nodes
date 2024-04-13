@@ -5,7 +5,7 @@ import math
 
 import torch
 import torch.nn.functional as F
-import ldm_patched.modules.model_management
+import comfy.model_management
 
 def get_canny_nms_kernel(device=None, dtype=None):
     """Utility function that returns 3x3 kernels for the Canny Non-maximal suppression."""
@@ -292,8 +292,8 @@ class Canny:
     CATEGORY = "image/preprocessors"
 
     def detect_edge(self, image, low_threshold, high_threshold):
-        output = canny(image.to(ldm_patched.modules.model_management.get_torch_device()).movedim(-1, 1), low_threshold, high_threshold)
-        img_out = output[1].to(ldm_patched.modules.model_management.intermediate_device()).repeat(1, 3, 1, 1).movedim(1, -1)
+        output = canny(image.to(comfy.model_management.get_torch_device()).movedim(-1, 1), low_threshold, high_threshold)
+        img_out = output[1].to(comfy.model_management.intermediate_device()).repeat(1, 3, 1, 1).movedim(1, -1)
         return (img_out,)
 
 NODE_CLASS_MAPPINGS = {

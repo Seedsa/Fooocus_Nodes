@@ -3,7 +3,7 @@ import os
 import torch
 import modules.patch
 import modules.config
-import ldm_patched.modules.model_management
+import comfy.model_management
 import ldm_patched.modules.latent_formats
 import modules.inpaint_worker
 import extras.vae_interpose as vae_interpose
@@ -209,7 +209,7 @@ def prepare_text_encoder(async_call=True):
         # TODO: make sure that this is always called in an async way so that users cannot feel it.
         pass
     assert_model_integrity()
-    ldm_patched.modules.model_management.load_models_gpu([final_clip.patcher, final_expansion.patcher])
+    comfy.model_management.load_models_gpu([final_clip.patcher, final_expansion.patcher])
     return
 
 
@@ -353,7 +353,7 @@ def process_diffusion(positive_cond, negative_cond, steps, switch, width, height
     print(f'[Sampler] sigma_min = {sigma_min}, sigma_max = {sigma_max}')
 
     modules.patch.BrownianTreeNoiseSamplerPatched.global_init(
-        initial_latent['samples'].to(ldm_patched.modules.model_management.get_torch_device()),
+        initial_latent['samples'].to(comfy.model_management.get_torch_device()),
         sigma_min, sigma_max, seed=image_seed, cpu=False)
 
     decoded_latent = None

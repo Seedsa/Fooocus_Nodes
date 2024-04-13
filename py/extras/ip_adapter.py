@@ -1,7 +1,7 @@
 import torch
 import ldm_patched.modules.clip_vision
 import safetensors.torch as sf
-import ldm_patched.modules.model_management as model_management
+import comfy.model_management as model_management
 import ldm_patched.ldm.modules.attention as attention
 
 from extras.resampler import Resampler
@@ -168,7 +168,7 @@ def preprocess(img, ip_adapter_path):
     global ip_adapters
     entry = ip_adapters[ip_adapter_path]
 
-    ldm_patched.modules.model_management.load_model_gpu(clip_vision.patcher)
+    model_management.load_model_gpu(clip_vision.patcher)
     pixel_values = clip_preprocess(numpy_to_pytorch(img).to(clip_vision.load_device))
     outputs = clip_vision.model(pixel_values=pixel_values, output_hidden_states=True)
 
@@ -184,10 +184,10 @@ def preprocess(img, ip_adapter_path):
 
     cond = cond.to(device=ip_adapter.load_device, dtype=ip_adapter.dtype)
 
-    ldm_patched.modules.model_management.load_model_gpu(image_proj_model)
+    model_management.load_model_gpu(image_proj_model)
     cond = image_proj_model.model(cond).to(device=ip_adapter.load_device, dtype=ip_adapter.dtype)
 
-    ldm_patched.modules.model_management.load_model_gpu(ip_layers)
+    model_management.load_model_gpu(ip_layers)
 
     if ip_unconds is None:
         uncond = ip_negative.to(device=ip_adapter.load_device, dtype=ip_adapter.dtype)

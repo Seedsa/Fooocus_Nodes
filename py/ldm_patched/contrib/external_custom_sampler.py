@@ -28,7 +28,7 @@ class BasicScheduler:
         if denoise < 1.0:
             total_steps = int(steps/denoise)
 
-        ldm_patched.modules.model_management.load_models_gpu([model])
+        comfy.model_management.load_models_gpu([model])
         sigmas = ldm_patched.modules.samplers.calculate_sigmas_scheduler(model.model, scheduler, total_steps).cpu()
         sigmas = sigmas[-(steps + 1):]
         return (sigmas, )
@@ -107,7 +107,7 @@ class SDTurboScheduler:
     def get_sigmas(self, model, steps, denoise):
         start_step = 10 - int(10 * denoise)
         timesteps = torch.flip(torch.arange(1, 11) * 100 - 1, (0,))[start_step:start_step + steps]
-        ldm_patched.modules.model_management.load_models_gpu([model])
+        comfy.model_management.load_models_gpu([model])
         sigmas = model.model.model_sampling.sigma(timesteps)
         sigmas = torch.cat([sigmas, sigmas.new_zeros([1])])
         return (sigmas, )

@@ -3,7 +3,7 @@ import einops
 import torch
 import numpy as np
 
-import ldm_patched.modules.model_management
+import comfy.model_management
 import ldm_patched.modules.model_detection
 import ldm_patched.modules.model_patcher
 import ldm_patched.modules.utils
@@ -236,14 +236,14 @@ def get_previewer(model):
         del sd
         VAE_approx_model.eval()
 
-        if ldm_patched.modules.model_management.should_use_fp16():
+        if comfy.model_management.should_use_fp16():
             VAE_approx_model.half()
             VAE_approx_model.current_type = torch.float16
         else:
             VAE_approx_model.float()
             VAE_approx_model.current_type = torch.float32
 
-        VAE_approx_model.to(ldm_patched.modules.model_management.get_torch_device())
+        VAE_approx_model.to(comfy.model_management.get_torch_device())
         VAE_approx_models[vae_approx_filename] = VAE_approx_model
 
     @torch.no_grad()
@@ -267,7 +267,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
              previewer_start=None, previewer_end=None, sigmas=None, noise_mean=None, disable_preview=False):
 
     if sigmas is not None:
-        sigmas = sigmas.clone().to(ldm_patched.modules.model_management.get_torch_device())
+        sigmas = sigmas.clone().to(comfy.model_management.get_torch_device())
 
     latent_image = latent["samples"]
 
@@ -293,7 +293,7 @@ def ksampler(model, positive, negative, latent, seed=None, steps=30, cfg=7.0, sa
         previewer_end = steps
 
     def callback(step, x0, x, total_steps):
-        ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
+        comfy.model_management.throw_exception_if_processing_interrupted()
         y = None
         if previewer is not None and not disable_preview:
             y = previewer(x0, previewer_start + step, previewer_end)

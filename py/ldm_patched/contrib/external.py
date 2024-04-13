@@ -28,7 +28,7 @@ import ldm_patched.modules.controlnet
 
 import ldm_patched.modules.clip_vision
 
-import ldm_patched.modules.model_management
+import comfy.model_management
 from ldm_patched.modules.args_parser import args
 
 import importlib
@@ -37,10 +37,10 @@ import ldm_patched.utils.path_utils
 import ldm_patched.utils.latent_visualization
 
 def before_node_execution():
-    ldm_patched.modules.model_management.throw_exception_if_processing_interrupted()
+    comfy.model_management.throw_exception_if_processing_interrupted()
 
 def interrupt_processing(value=True):
-    ldm_patched.modules.model_management.interrupt_current_processing(value)
+    comfy.model_management.interrupt_current_processing(value)
 
 MAX_RESOLUTION=8192
 
@@ -1006,7 +1006,7 @@ class GLIGENTextBoxApply:
 
 class EmptyLatentImage:
     def __init__(self):
-        self.device = ldm_patched.modules.model_management.intermediate_device()
+        self.device = comfy.model_management.intermediate_device()
 
     @classmethod
     def INPUT_TYPES(s):

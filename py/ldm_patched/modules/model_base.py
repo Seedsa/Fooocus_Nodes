@@ -2,7 +2,7 @@ import torch
 from ldm_patched.ldm.modules.diffusionmodules.openaimodel import UNetModel, Timestep
 from ldm_patched.ldm.modules.encoders.noise_aug_modules import CLIPEmbeddingNoiseAugmentation
 from ldm_patched.ldm.modules.diffusionmodules.upscaling import ImageConcatWithNoiseAugmentation
-import ldm_patched.modules.model_management
+import comfy.model_management
 import ldm_patched.modules.conds
 import ldm_patched.modules.ops
 from enum import Enum
@@ -205,13 +205,13 @@ class BaseModel(torch.nn.Module):
         self.inpaint_model = True
 
     def memory_required(self, input_shape):
-        if ldm_patched.modules.model_management.xformers_enabled() or ldm_patched.modules.model_management.pytorch_attention_flash_attention():
+        if comfy.model_management.xformers_enabled() or comfy.model_management.pytorch_attention_flash_attention():
             dtype = self.get_dtype()
             if self.manual_cast_dtype is not None:
                 dtype = self.manual_cast_dtype
             #TODO: this needs to be tweaked
             area = input_shape[0] * input_shape[2] * input_shape[3]
-            return (area * ldm_patched.modules.model_management.dtype_size(dtype) / 50) * (1024 * 1024)
+            return (area * comfy.model_management.dtype_size(dtype) / 50) * (1024 * 1024)
         else:
             #TODO: this formula might be too aggressive since I tweaked the sub-quad and split algorithms to use less memory.
             area = input_shape[0] * input_shape[2] * input_shape[3]

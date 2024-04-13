@@ -92,9 +92,9 @@ class FuseModule(nn.Module):
 
 class PhotoMakerIDEncoder(ldm_patched.modules.clip_model.CLIPVisionModelProjection):
     def __init__(self):
-        self.load_device = ldm_patched.modules.model_management.text_encoder_device()
-        offload_device = ldm_patched.modules.model_management.text_encoder_offload_device()
-        dtype = ldm_patched.modules.model_management.text_encoder_dtype(self.load_device)
+        self.load_device = comfy.model_management.text_encoder_device()
+        offload_device = comfy.model_management.text_encoder_offload_device()
+        dtype = comfy.model_management.text_encoder_dtype(self.load_device)
 
         super().__init__(VISION_CONFIG_DICT, dtype, offload_device, ldm_patched.modules.ops.manual_cast)
         self.visual_projection_2 = ldm_patched.modules.ops.manual_cast.Linear(1024, 1280, bias=False)

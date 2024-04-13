@@ -2,7 +2,7 @@ import torch
 import math
 import os
 import ldm_patched.modules.utils
-import ldm_patched.modules.model_management
+import comfy.model_management
 import ldm_patched.modules.model_detection
 import ldm_patched.modules.model_patcher
 import ldm_patched.modules.ops
@@ -39,7 +39,7 @@ class ControlBase:
         self.timestep_range = None
 
         if device is None:
-            device = ldm_patched.modules.model_management.get_torch_device()
+            device = comfy.model_management.get_torch_device()
         self.device = device
         self.previous_controlnet = None
 
@@ -136,7 +136,7 @@ class ControlNet(ControlBase):
         super().__init__(device)
         self.control_model = control_model
         self.load_device = load_device
-        self.control_model_wrapped = ldm_patched.modules.model_patcher.ModelPatcher(self.control_model, load_device=load_device, offload_device=ldm_patched.modules.model_management.unet_offload_device())
+        self.control_model_wrapped = ldm_patched.modules.model_patcher.ModelPatcher(self.control_model, load_device=load_device, offload_device=comfy.model_management.unet_offload_device())
         self.global_average_pooling = global_average_pooling
         self.model_sampling_current = None
         self.manual_cast_dtype = manual_cast_dtype
@@ -279,7 +279,7 @@ class ControlLora(ControlNet):
         controlnet_config["operations"] = control_lora_ops
         controlnet_config["dtype"] = dtype
         self.control_model = ldm_patched.controlnet.cldm.ControlNet(**controlnet_config)
-        self.control_model.to(ldm_patched.modules.model_management.get_torch_device())
+        self.control_model.to(comfy.model_management.get_torch_device())
         diffusion_model = model.diffusion_model
         sd = diffusion_model.state_dict()
         cm = self.control_model.state_dict()
@@ -293,7 +293,7 @@ class ControlLora(ControlNet):
 
         for k in self.control_weights:
             if k not in {"lora_controlnet"}:
-                ldm_patched.modules.utils.set_attr(self.control_model, k, self.control_weights[k].to(dtype).to(ldm_patched.modules.model_management.get_torch_device()))
+                ldm_patched.modules.utils.set_attr(self.control_model, k, self.control_weights[k].to(dtype).to(comfy.model_management.get_torch_device()))
 
     def copy(self):
         c = ControlLora(self.control_weights, global_average_pooling=self.global_average_pooling)
@@ -310,7 +310,7 @@ class ControlLora(ControlNet):
         return out
 
     def inference_memory_requirements(self, dtype):
-        return ldm_patched.modules.utils.calculate_parameters(self.control_weights) * ldm_patched.modules.model_management.dtype_size(dtype) + ControlBase.inference_memory_requirements(self, dtype)
+        return ldm_patched.modules.utils.calculate_parameters(self.control_weights) * comfy.model_management.dtype_size(dtype) + ControlBase.inference_memory_requirements(self, dtype)
 
 def load_controlnet(ckpt_path, model=None):
     controlnet_data = ldm_patched.modules.utils.load_torch_file(ckpt_path, safe_load=True)
@@ -319,7 +319,7 @@ def load_controlnet(ckpt_path, model=None):
 
     controlnet_config = None
     if "controlnet_cond_embedding.conv_in.weight" in controlnet_data: #diffusers format
-        unet_dtype = ldm_patched.modules.model_management.unet_dtype()
+        unet_dtype = comfy.model_management.unet_dtype()
         controlnet_config = ldm_patched.modules.model_detection.unet_config_from_diffusers_unet(controlnet_data, unet_dtype)
         diffusers_keys = ldm_patched.modules.utils.unet_to_diffusers(controlnet_config)
         diffusers_keys["controlnet_mid_block.weight"] = "middle_block_out.0.weight"
@@ -380,10 +380,10 @@ def load_controlnet(ckpt_path, model=None):
         return net
 
     if controlnet_config is None:
-        unet_dtype = ldm_patched.modules.model_management.unet_dtype()
+        unet_dtype = comfy.model_management.unet_dtype()
         controlnet_config = ldm_patched.modules.model_detection.model_config_from_unet(controlnet_data, prefix, unet_dtype, True).unet_config
-    load_device = ldm_patched.modules.model_management.get_torch_device()
-    manual_cast_dtype = ldm_patched.modules.model_management.unet_manual_cast(unet_dtype, load_device)
+    load_device = comfy.model_management.get_torch_device()
+    manual_cast_dtype = comfy.model_management.unet_manual_cast(unet_dtype, load_device)
     if manual_cast_dtype is not None:
         controlnet_config["operations"] = ldm_patched.modules.ops.manual_cast
     controlnet_config.pop("out_channels")
@@ -393,7 +393,7 @@ def load_controlnet(ckpt_path, model=None):
     if pth:
         if 'difference' in controlnet_data:
             if model is not None:
-                ldm_patched.modules.model_management.load_models_gpu([model])
+                comfy.model_management.load_models_gpu([model])
                 model_sd = model.model_state_dict()
                 for x in controlnet_data:
                     c_m = "control_model."

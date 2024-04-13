@@ -8,7 +8,7 @@
 import os
 import torch
 import math
-import ldm_patched.modules.model_management as model_management
+import comfy.model_management as model_management
 
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed

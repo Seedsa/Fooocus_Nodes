@@ -5,7 +5,7 @@ import json
 
 import ldm_patched.modules.ops
 import ldm_patched.modules.model_patcher
-import ldm_patched.modules.model_management
+import comfy.model_management
 import ldm_patched.modules.utils
 import ldm_patched.modules.clip_model
 
@@ -33,9 +33,9 @@ class ClipVisionModel():
         with open(json_config) as f:
             config = json.load(f)
 
-        self.load_device = ldm_patched.modules.model_management.text_encoder_device()
-        offload_device = ldm_patched.modules.model_management.text_encoder_offload_device()
-        self.dtype = ldm_patched.modules.model_management.text_encoder_dtype(self.load_device)
+        self.load_device = comfy.model_management.text_encoder_device()
+        offload_device = comfy.model_management.text_encoder_offload_device()
+        self.dtype = comfy.model_management.text_encoder_dtype(self.load_device)
         self.model = ldm_patched.modules.clip_model.CLIPVisionModelProjection(config, self.dtype, offload_device, ldm_patched.modules.ops.manual_cast)
         self.model.eval()
 
@@ -48,14 +48,14 @@ class ClipVisionModel():
         return self.model.state_dict()
 
     def encode_image(self, image):
-        ldm_patched.modules.model_management.load_model_gpu(self.patcher)
+        comfy.model_management.load_model_gpu(self.patcher)
         pixel_values = clip_preprocess(image.to(self.load_device)).float()
         out = self.model(pixel_values=pixel_values, intermediate_output=-2)
 
         outputs = Output()
-        outputs["last_hidden_state"] = out[0].to(ldm_patched.modules.model_management.intermediate_device())
-        outputs["image_embeds"] = out[2].to(ldm_patched.modules.model_management.intermediate_device())
-        outputs["penultimate_hidden_states"] = out[1].to(ldm_patched.modules.model_management.intermediate_device())
+        outputs["last_hidden_state"] = out[0].to(comfy.model_management.intermediate_device())
+        outputs["image_embeds"] = out[2].to(comfy.model_management.intermediate_device())
+        outputs["penultimate_hidden_states"] = out[1].to(comfy.model_management.intermediate_device())
         return outputs
 
 def convert_to_transformers(sd, prefix):
