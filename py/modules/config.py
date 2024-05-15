@@ -69,8 +69,8 @@ def get_external_paths(name):
         # code will work fine any way if we did not add this check
         # but just to avoid download the files in "t2i_adapter" path
         # since controlnet is the only list that allready has 2 paths 
-        # and to assert that the code will run exactly like it was before that commit
-        if "controlnet" in name and base_path is None:
+        # and to assert that the code will run exactly like it was before last commit
+        if "controlnet" in name and len(folder_paths.get_folder_paths(name)) <= 2:
             return folder_paths.get_folder_paths(name)[0]
         return folder_paths.get_folder_paths(name)[-1]
     except Exception as e:
