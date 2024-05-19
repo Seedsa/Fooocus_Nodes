@@ -66,6 +66,8 @@ def get_external_paths(name):
             else:
                 return os.path.join(folder_paths.models_dir, sub_path)
     try:
+        if "controlnet" in name and len(folder_paths.get_folder_paths(name)) <= 2:
+            return folder_paths.get_folder_paths(name)[0]
         return folder_paths.get_folder_paths(name)[-1]
     except Exception as e:
         return folder_paths.get_folder_paths(name)[0]
