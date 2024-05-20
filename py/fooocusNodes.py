@@ -765,8 +765,11 @@ class FooocusKsampler:
 
         if image_output == "Hide":
             return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
-
-        results["result"] = new_pipe, all_imgs
+        
+        # Combine the processed images back into a single tensor
+        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
+        
+        results["result"] = new_pipe, base_image
         return results
 
 
