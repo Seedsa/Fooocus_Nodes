@@ -7,3 +7,4 @@ __pycache__/
 types
 *.pyc
 .DS_Store
+user-config.yaml
