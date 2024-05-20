@@ -38,7 +38,6 @@ import time
 import copy
 
 import comfy.samplers
-import describer as d
 
 MIN_SEED = 0
 MAX_SEED = 2**63 - 1
@@ -750,6 +749,8 @@ class FooocusKsampler:
 
         new_pipe = {
             **pipe,
+            "positive_cond" : pipe["positive_cond"],
+            "negative_cond" : pipe["negative_cond"],
             "images": all_imgs,
         }
         del pipe
@@ -767,7 +768,11 @@ class FooocusKsampler:
         if image_output == "Hide":
             return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
 
-        results["result"] = new_pipe, all_imgs
+        # Combine the processed images back into a single tensor
+        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
+
+        results["result"] = new_pipe, base_image
+
         return results
 
 
@@ -1352,35 +1357,6 @@ class detailerFix:
 
         return {"ui": {"images": results}, "result": (new_pipe, result_imgs)}
 
-class FooocusImageDescribe:
-    @classmethod
-    def INPUT_TYPES(s):
-        input_dir = folder_paths.get_input_directory()
-        files = [f for f in os.listdir(input_dir) if os.path.isfile(os.path.join(input_dir, f))]
-        return {"required":
-                    {"image": (sorted(files), {"image_upload": True}),
-                     "image_mode": (["photo", "anime"], {"default": "photo"},)}
-                }
-
-
-    RETURN_TYPES = ("STRING",)
-    FUNCTION = "image_describe"
-    CATEGORY = "Fooocus"
-
-    def image_describe(self, image, image_mode):
-        if image_mode == 'photo':
-            image_path = folder_paths.get_annotated_filepath(image)
-            image_ = d.preprocess_image(image_path)
-            description = d.model.generate(image_, num_beams=1, max_length=75)
-            return (description, )
-
-        if image_mode == 'anime':
-            # anime mode not yet implemented
-            image_path = folder_paths.get_annotated_filepath(image)
-            image_ = d.preprocess_image(image_path)
-            description = d.model.generate(image_, num_beams=1, max_length=75)
-            return (description, )
-
 
 class ultralyticsDetectorForDetailerFix:
     @classmethod
@@ -1460,7 +1436,6 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus ultralyticsDetectorPipe": ultralyticsDetectorForDetailerFix,
     "Fooocus samLoaderPipe": samLoaderForDetailerFix,
     "Fooocus detailerFix": detailerFix,
-    "Fooocus Image Describe":FooocusImageDescribe,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
