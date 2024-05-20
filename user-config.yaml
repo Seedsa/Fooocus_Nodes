@@ -1,0 +1,7 @@
+models_directory: ""
+# set external models directory than comfyui default
+# example "D:/programing/SD/Shared/models"
+
+allow_download_models: true
+# set to false, and you will download needed models manually
+# console will tell what to download and where you should put this files

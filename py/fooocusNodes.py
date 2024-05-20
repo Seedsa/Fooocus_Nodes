@@ -9,6 +9,7 @@ import numpy as np
 import folder_paths
 from comfy.samplers import *
 import modules.config
+import modules.model_loader
 import modules.flags
 import modules.default_pipeline as pipeline
 import modules.core as core
@@ -382,10 +383,10 @@ class FooocusPreKSampler:
 
             inpaint_image = HWC3(inpaint_image)
             log_node_info('Downloading upscale models ...')
-            modules.config.downloading_upscale_model()
+            modules.model_loader.downloading_upscale_model()
             if inpaint_parameterized:
                 print('Downloading inpainter ...')
-                inpaint_head_model_path, inpaint_patch_model_path = modules.config.downloading_inpaint_models(
+                inpaint_head_model_path, inpaint_patch_model_path = modules.model_loader.downloading_inpaint_models(
                     inpaint_engine)
                 base_model_additional_loras += [(inpaint_patch_model_path, 1.0)]
                 print(f'[Inpaint] Current inpaint model is {inpaint_patch_model_path}')
@@ -650,12 +651,17 @@ class FooocusPreKSampler:
         log_node_info('Moving model to GPU ...')
         new_pipe = {
             "tasks": tasks,
-            "positive": positive,
-            "negative": negative,
+            "positive_prompt": pipe["positive_prompt"],
+            "negative_prompt": pipe["negative_prompt"],
+            "image_number": pipe['image_number'],
+            "base_model_name": pipe['base_model_name'],
+            "refiner_model_name":pipe['refiner_model_name'],
+            "optional_lora_stack":pipe['optional_lora_stack'],
+            "use_cn":pipe['use_cn'],
+            "refiner_switch": switch,
             "seed": seed,
             "steps": steps,
             "cfg": cfg_scale,
-            "switch": switch,
             "refiner_swap_method": refiner_swap_method,
             "sampler_name": final_sampler_name,
             "scheduler": final_scheduler_name,
@@ -766,7 +772,11 @@ class FooocusKsampler:
         if image_output == "Hide":
             return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
 
-        results["result"] = new_pipe, all_imgs
+        # Combine the processed images back into a single tensor
+        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
+
+        results["result"] = new_pipe, base_image
+
         return results
 
 
@@ -800,7 +810,7 @@ class FooocusUpscale:
         all_steps = steps * len(image)
         pbar = comfy.utils.ProgressBar(all_steps)
         log_node_info('Downloading upscale models ...')
-        modules.config.downloading_upscale_model()
+        modules.model_loader.downloading_upscale_model()
 
         def callback(step, x0, x, total_steps, y):
             preview_bytes = None
@@ -950,7 +960,7 @@ class FooocusControlnet:
     ):
         print("process controlnet...")
         if cn_type == modules.flags.cn_canny:
-            cn_path = modules.config.downloading_controlnet_canny()
+            cn_path = modules.model_loader.downloading_controlnet_canny()
             image = image[0].numpy()
             image = (image * 255).astype(np.uint8)
             image = resize_image(
@@ -958,7 +968,7 @@ class FooocusControlnet:
             if not skip_cn_preprocess:
                 image = preprocessors.canny_pyramid(image)
         if cn_type == modules.flags.cn_cpds:
-            cn_path = modules.config.downloading_controlnet_cpds()
+            cn_path = modules.model_loader.downloading_controlnet_cpds()
             image = image[0].numpy()
             image = (image * 255).astype(np.uint8)
             image = resize_image(
@@ -997,7 +1007,7 @@ class FooocusImagePrompt:
         self, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
     ):
         if ip_type == modules.flags.cn_ip:
-            clip_vision_path, ip_negative_path, ip_adapter_path = modules.config.downloading_ip_adapters(
+            clip_vision_path, ip_negative_path, ip_adapter_path = modules.model_loader.downloading_ip_adapters(
                 'ip')
             ip_adapter.load_ip_adapter(
                 clip_vision_path, ip_negative_path, ip_adapter_path)
@@ -1009,7 +1019,7 @@ class FooocusImagePrompt:
             task[0] = ip_adapter.preprocess(
                 image, ip_adapter_path=ip_adapter_path)
         if ip_type == modules.flags.cn_ip_face:
-            clip_vision_path, ip_negative_path, ip_adapter_face_path = modules.config.downloading_ip_adapters(
+            clip_vision_path, ip_negative_path, ip_adapter_face_path = modules.model_loader.downloading_ip_adapters(
                 'face')
             ip_adapter.load_ip_adapter(
                 clip_vision_path, ip_negative_path, ip_adapter_face_path)
