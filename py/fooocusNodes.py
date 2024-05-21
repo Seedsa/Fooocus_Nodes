@@ -764,6 +764,12 @@ class FooocusKsampler:
         # Combine the processed images back into a single tensor
         base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
 
+        new_pipe = {
+            **pipe,
+            "images": all_imgs,
+        }
+        del pipe
+
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
@@ -775,9 +781,9 @@ class FooocusKsampler:
                 all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (pipe, base_image)}
+            return {"ui": {"value": list()}, "result": (new_pipe, base_image)}
 
-        results["result"] = pipe, base_image
+        results["result"] = new_pipe, base_image
 
         return results
 
@@ -1139,37 +1145,41 @@ class FooocusPipeOut:
             "hidden": {"my_unique_id": "UNIQUE_ID"},
         }
 
-    RETURN_TYPES = ("PIPE_LINE", "MODEL", "CONDITIONING",
-                    "CONDITIONING", "LATENT", "VAE", "FLOAT",)
-    RETURN_NAMES = ("pipe", "model", "pos", "neg", "latent",
-                    "vae", "switch",)
+    # RETURN_TYPES = ("PIPE_LINE", "MODEL", "STRING",
+    #                 "STRING", "LATENT", "VAE", "FLOAT",)
+    # RETURN_NAMES = ("pipe", "model", "positive_prompt", "negative_prompt", "latent",
+    #                 "vae", "switch",)
+    RETURN_TYPES = ("PIPE_LINE", "MODEL", "STRING",
+                    "STRING",)
+    RETURN_NAMES = ("pipe", "model", "positive_prompt", "negative_prompt",)
     FUNCTION = "flush"
 
     CATEGORY = "Fooocus"
 
     def flush(self, pipe, my_unique_id=None):
         model = pipe.get("model")
-        pos = pipe.get("positive")
-        neg = pipe.get("negative")
-        latent = pipe.get("latent")
-        vae = pipe.get("vae")
-        switch = pipe.get("switch")
-
-        return pipe, model, pos, neg, latent, vae, switch
+        positive_prompt = pipe['tasks'][0]['positive']
+        negative_prompt = pipe['tasks'][0]['negative']
+        # latent = pipe.get("latent")
+        # vae = pipe.get("vae")
+        # switch = pipe.get("switch")
+        return pipe, model, positive_prompt, negative_prompt  # ,latent, vae, switch
 
 
 class FooocusPipeIn:
+    def __init__(self):
+        pass
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
                 "pipe": ("PIPE_LINE",),
                 "model": ("MODEL",),
-                "pos": ("CONDITIONING",),
-                "neg": ("CONDITIONING",),
-                "latent": ("LATENT",),
-                "vae": ("VAE",),
-                "switch": ("FLOAT", {"default": 0.5, "min": 0, "max": 1.0, "step": 0.1, "forceInput": True},),
+                "positive_prompt": ("STRING", {"default": "", "forceInput": True}),
+                "negative_prompt": ("STRING", {"default": "", "forceInput": True}),
+                # "latent": ("LATENT",),
+                # "vae": ("VAE",),
+                # "switch": ("FLOAT", {"default": 0.5, "min": 0, "max": 1.0, "step": 0.1, "forceInput": True},),
             },
             "hidden": {"my_unique_id": "UNIQUE_ID"},
         }
@@ -1177,17 +1187,33 @@ class FooocusPipeIn:
     RETURN_TYPES = ("PIPE_LINE",)
     RETURN_NAMES = ("pipe",)
     FUNCTION = "combine"
-    # OUTPUT_NODE = True
     CATEGORY = "Fooocus"
 
-    def combine(self, pipe, model, pos, neg, latent, vae, switch, my_unique_id=None):
+    def keep_specific_keys(self, dictionary):
+        specific_keys = [
+            'base_model_name',
+            'refiner_model_name',
+            'refiner_switch',
+            'refiner_swap_method',
+            'positive_prompt',
+            'negative_prompt',
+            'image_number',
+            'latent_width',
+            'latent_height',
+            'optional_lora_stack',
+            'use_cn'
+        ]
+        return {key: dictionary[key] for key in specific_keys if key in dictionary}
+
+    def combine(self, pipe:dict, model, positive_prompt, negative_prompt, latent=None, vae=None, switch=None, my_unique_id=None):
+        pipe = self.keep_specific_keys(pipe)
         pipe["model"] = model
-        pipe["positive"] = pos
-        pipe["negative"] = neg
-        pipe["latent"] = latent
-        pipe["vae"] = vae
-        pipe["switch"] = switch
-        return pipe
+        pipe["positive_prompt"] = str(positive_prompt)
+        pipe["negative_prompt"] = str(negative_prompt)
+        # pipe["latent"] = latent
+        # pipe["vae"] = vae
+        # pipe["refiner_switch"] = switch
+        return (pipe,)
 
 
 class preDetailerFix:
