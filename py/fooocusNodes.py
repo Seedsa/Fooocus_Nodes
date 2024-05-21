@@ -4,6 +4,7 @@ import sys
 sys.path.append(os.path.dirname(__file__))
 modules_path = os.path.dirname(os.path.realpath(__file__))
 from modules.patch import PatchSettings, patch_settings, patch_all
+
 patch_all()
 import numpy as np
 import folder_paths
@@ -41,7 +42,7 @@ import copy
 import comfy.samplers
 
 MIN_SEED = 0
-MAX_SEED = 2**63 - 1
+MAX_SEED = 2 ** 63 - 1
 
 # lora
 
@@ -113,7 +114,9 @@ class FooocusLoader:
         ]
         return {
             "required": {
-                "base_model_name": (folder_paths.get_filename_list("checkpoints"), {"default": "juggernautXL_v8Rundiffusion.safetensors"},),
+                "base_model_name": (
+                    folder_paths.get_filename_list("checkpoints"),
+                    {"default": "juggernautXL_v8Rundiffusion.safetensors"},),
                 "refiner_model_name": (["None"] + folder_paths.get_filename_list("checkpoints"), {"default": "None"},),
                 "refiner_switch": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1, "step": 0.1},),
                 "refiner_swap_method": (["joint", "separate", "vae"],),
@@ -222,7 +225,8 @@ class FooocusPreKSampler:
     FUNCTION = "fooocus_preKSampler"
     CATEGORY = "Fooocus"
 
-    def fooocus_preKSampler(self, pipe: dict, image_to_latent=None, latent=None, fooocus_inpaint=None, fooocus_styles=None, **kwargs):
+    def fooocus_preKSampler(self, pipe: dict, image_to_latent=None, latent=None, fooocus_inpaint=None,
+                            fooocus_styles=None, **kwargs):
         # 检查pipe非空
         assert pipe is not None, "请先调用 FooocusLoader 进行初始化！"
         execution_start_time = time.perf_counter()
@@ -448,8 +452,10 @@ class FooocusPreKSampler:
                 task_prompt = apply_wildcards(prompt, task_rng, i, read_wildcards_in_order)
                 task_prompt = apply_arrays(task_prompt, i)
                 task_negative_prompt = apply_wildcards(negative_prompt, task_rng, i, read_wildcards_in_order)
-                task_extra_positive_prompts = [apply_wildcards(pmt, task_rng, i, read_wildcards_in_order) for pmt in extra_positive_prompts]
-                task_extra_negative_prompts = [apply_wildcards(pmt, task_rng, i, read_wildcards_in_order) for pmt in extra_negative_prompts]
+                task_extra_positive_prompts = [apply_wildcards(pmt, task_rng, i, read_wildcards_in_order) for pmt in
+                                               extra_positive_prompts]
+                task_extra_negative_prompts = [apply_wildcards(pmt, task_rng, i, read_wildcards_in_order) for pmt in
+                                               extra_negative_prompts]
 
                 positive_basic_workloads = []
                 negative_basic_workloads = []
@@ -653,11 +659,13 @@ class FooocusPreKSampler:
             "tasks": tasks,
             "positive_prompt": pipe["positive_prompt"],
             "negative_prompt": pipe["negative_prompt"],
-            "image_number": pipe['image_number'],
+            "positive": positive,
+            "negative": negative,
+            "image_number": 1,  # pipe['image_number'],
             "base_model_name": pipe['base_model_name'],
-            "refiner_model_name":pipe['refiner_model_name'],
-            "optional_lora_stack":pipe['optional_lora_stack'],
-            "use_cn":pipe['use_cn'],
+            "refiner_model_name": pipe['refiner_model_name'],
+            "optional_lora_stack": pipe['optional_lora_stack'],
+            "use_cn": pipe['use_cn'],
             "refiner_switch": switch,
             "seed": seed,
             "steps": steps,
@@ -675,7 +683,8 @@ class FooocusPreKSampler:
             "vae": pipeline.final_vae,
         }
         del pipe
-        return {"ui": {"value": [new_pipe["seed"]]}, "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae, positive, negative)}
+        return {"ui": {"value": [new_pipe["seed"]]},
+                "result": (new_pipe, pipeline.final_unet, pipeline.final_clip, pipeline.final_vae, positive, negative)}
 
 
 class FooocusKsampler:
@@ -684,7 +693,7 @@ class FooocusKsampler:
         return {
             "required": {
                 "pipe": ("PIPE_LINE",),
-                "image_output": (["Hide", "Preview", "Save", "Hide/Save",], {"default": "Preview"},),
+                "image_output": (["Hide", "Preview", "Save", "Hide/Save", ], {"default": "Preview"},),
                 "save_prefix": ("STRING", {"default": "ComfyUI"}),
             },
             "optional": {"model": ("MODEL",), },
@@ -746,18 +755,14 @@ class FooocusKsampler:
                     imgs = [inpaint_worker.current_task.post_process(
                         x) for x in imgs]
 
-                imgs = [np.array(img).astype(np.float32) /
-                        255.0 for img in imgs]
+                imgs = [np.array(img).astype(np.float32) / 255.0 for img in imgs]
                 imgs = [torch.from_numpy(img) for img in imgs]
                 all_imgs.extend(imgs)
             except Exception as e:
                 print('task stopped')
 
-        new_pipe = {
-            **pipe,
-            "images": all_imgs,
-        }
-        del pipe
+        # Combine the processed images back into a single tensor
+        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
 
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
@@ -770,12 +775,9 @@ class FooocusKsampler:
                 all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
+            return {"ui": {"value": list()}, "result": (pipe, base_image)}
 
-        # Combine the processed images back into a single tensor
-        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
-
-        results["result"] = new_pipe, base_image
+        results["result"] = pipe, base_image
 
         return results
 
@@ -787,11 +789,11 @@ class FooocusUpscale:
             "required": {
                 "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
-                "upscale": ([1.5, 2.0], {"default": 1.5, }),
+                "upscale": ([1.25, 1.5, 2.0], {"default": 1.5, }),
                 "steps": ("INT", {"default": 18, "min": 1, "max": 100}),
                 "denoise": ("FLOAT", {"default": 0.382, "min": 0.00, "max": 1.00, "step": 0.001},),
                 "fast": ("BOOLEAN", {"default": False}),
-                "image_output": (["Hide", "Preview", "Save", "Hide/Save",], {"default": "Preview"},),
+                "image_output": (["Hide", "Preview", "Save", "Hide/Save", ], {"default": "Preview"},),
                 "save_prefix": ("STRING", {"default": "ComfyUI"}),
             },
             "hidden": {
@@ -799,13 +801,15 @@ class FooocusUpscale:
                 "extra_pnginfo": "EXTRA_PNGINFO",
             },
         }
+
     RETURN_TYPES = ("PIPE_LINE", "IMAGE")
     RETURN_NAMES = ("pipe", "image")
     OUTPUT_NODE = True
     FUNCTION = "FooocusUpscale"
     CATEGORY = "Fooocus"
 
-    def FooocusUpscale(self, pipe, image, upscale, denoise, fast, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
+    def FooocusUpscale(self, pipe, image, upscale, denoise, fast, steps, image_output, save_prefix, prompt=None,
+                       extra_pnginfo=None):
         all_imgs = []
         all_steps = steps * len(image)
         pbar = comfy.utils.ProgressBar(all_steps)
@@ -817,7 +821,7 @@ class FooocusUpscale:
             pbar.update_absolute(step + 1, total_steps, preview_bytes)
 
         for image_id, img in enumerate(image):
-            print(f'upscale image #{image_id+1} ...')
+            print(f'upscale image #{image_id + 1} ...')
             img = img.unsqueeze(0)
             img = img[0].numpy()
             img = (img * 255).astype(np.uint8)
@@ -913,11 +917,9 @@ class FooocusUpscale:
             imgs = [torch.from_numpy(img) for img in imgs]
             all_imgs.extend(imgs)
 
-        new_pipe = {
-            **pipe,
-            "images": all_imgs,
-        }
-        del pipe
+        # Combine the processed images back into a single tensor
+        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
+
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
@@ -929,9 +931,9 @@ class FooocusUpscale:
                 all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
+            return {"ui": {"value": list()}, "result": (pipe, base_image)}
 
-        results["result"] = new_pipe, all_imgs
+        results["result"] = pipe, base_image
         return results
 
 
@@ -942,9 +944,13 @@ class FooocusControlnet:
             "required": {
                 "pipe": ("PIPE_LINE",),
                 "image": ("IMAGE",),
-                "cn_type": (modules.flags.cn_list, {"default": modules.flags.default_cn}, ),
-                "cn_stop": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_cn][0], "min": 0.0, "max": 1.0, "step": 0.01},),
-                "cn_weight": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_cn][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+                "cn_type": (modules.flags.cn_list, {"default": modules.flags.default_cn},),
+                "cn_stop": ("FLOAT",
+                            {"default": modules.flags.default_parameters[modules.flags.default_cn][0], "min": 0.0,
+                             "max": 1.0, "step": 0.01},),
+                "cn_weight": ("FLOAT",
+                              {"default": modules.flags.default_parameters[modules.flags.default_cn][1], "min": 0.0,
+                               "max": 2.0, "step": 0.01},),
                 "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
             },
         }
@@ -956,7 +962,7 @@ class FooocusControlnet:
     CATEGORY = "Fooocus"
 
     def apply_controlnet(
-        self, pipe, image, cn_type, cn_stop, cn_weight, skip_cn_preprocess
+            self, pipe, image, cn_type, cn_stop, cn_weight, skip_cn_preprocess
     ):
         print("process controlnet...")
         if cn_type == modules.flags.cn_canny:
@@ -990,9 +996,13 @@ class FooocusImagePrompt:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "ip_type": (modules.flags.ip_list, {"default": modules.flags.default_ip}, ),
-                "ip_stop": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_ip][0], "min": 0.0, "max": 1.0, "step": 0.01},),
-                "ip_weight": ("FLOAT", {"default": modules.flags.default_parameters[modules.flags.default_ip][1], "min": 0.0, "max": 2.0, "step": 0.01},),
+                "ip_type": (modules.flags.ip_list, {"default": modules.flags.default_ip},),
+                "ip_stop": ("FLOAT",
+                            {"default": modules.flags.default_parameters[modules.flags.default_ip][0], "min": 0.0,
+                             "max": 1.0, "step": 0.01},),
+                "ip_weight": ("FLOAT",
+                              {"default": modules.flags.default_parameters[modules.flags.default_ip][1], "min": 0.0,
+                               "max": 2.0, "step": 0.01},),
                 "skip_cn_preprocess": ("BOOLEAN", {"default": False},),
             },
         }
@@ -1004,7 +1014,7 @@ class FooocusImagePrompt:
     CATEGORY = "Fooocus"
 
     def image_prompt(
-        self, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
+            self, image, ip_type, ip_stop, ip_weight, skip_cn_preprocess
     ):
         if ip_type == modules.flags.cn_ip:
             clip_vision_path, ip_negative_path, ip_adapter_path = modules.model_loader.downloading_ip_adapters(
@@ -1032,7 +1042,7 @@ class FooocusImagePrompt:
             task = [image, ip_stop, ip_weight]
             task[0] = ip_adapter.preprocess(
                 image, ip_adapter_path=ip_adapter_face_path)
-        return (task, )
+        return (task,)
 
 
 class FooocusApplyImagePrompt:
@@ -1049,6 +1059,7 @@ class FooocusApplyImagePrompt:
                 "image_prompt_4": ("IMAGE_PROMPT",),
             },
         }
+
     RETURN_TYPES = ("MODEL",)
     RETURN_NAMES = ("model",)
     OUTPUT_NODE = True
@@ -1056,7 +1067,7 @@ class FooocusApplyImagePrompt:
     CATEGORY = "Fooocus"
 
     def apply_image_prompt(
-        self, model, image_prompt_1=None, image_prompt_2=None, image_prompt_3=None, image_prompt_4=None
+            self, model, image_prompt_1=None, image_prompt_2=None, image_prompt_3=None, image_prompt_4=None
     ):
         image_prompt_tasks = []
         if image_prompt_1:
@@ -1069,7 +1080,7 @@ class FooocusApplyImagePrompt:
             image_prompt_tasks.append(image_prompt_4)
         work_model = model.clone()
         new_model = ip_adapter.patch_model(work_model, image_prompt_tasks)
-        return (new_model, )
+        return (new_model,)
 
 
 class FooocusInpaint:
@@ -1090,6 +1101,7 @@ class FooocusInpaint:
                 "mask": ("MASK",),
             },
         }
+
     RETURN_TYPES = ("FOOOCUS_INPAINT",)
     RETURN_NAMES = ("fooocus_inpaint",)
     OUTPUT_NODE = True
@@ -1097,7 +1109,8 @@ class FooocusInpaint:
     CATEGORY = "Fooocus"
 
     def fooocus_inpaint(
-        self, image, inpaint_disable_initial_latent, inpaint_respective_field, inpaint_engine, top, bottom, left, right, mask=None
+            self, image, inpaint_disable_initial_latent, inpaint_respective_field, inpaint_engine, top, bottom, left,
+            right, mask=None
     ):
         fooocus_inpaint = {
             "image": image,
@@ -1110,7 +1123,7 @@ class FooocusInpaint:
             "left": left,
             "right": right
         }
-        return (fooocus_inpaint, )
+        return (fooocus_inpaint,)
 
 
 class FooocusPipeOut:
@@ -1145,6 +1158,38 @@ class FooocusPipeOut:
         return pipe, model, pos, neg, latent, vae, switch
 
 
+class FooocusPipeIn:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "pipe": ("PIPE_LINE",),
+                "model": ("MODEL",),
+                "pos": ("CONDITIONING",),
+                "neg": ("CONDITIONING",),
+                "latent": ("LATENT",),
+                "vae": ("VAE",),
+                "switch": ("FLOAT", {"default": 0.5, "min": 0, "max": 1.0, "step": 0.1, "forceInput": True},),
+            },
+            "hidden": {"my_unique_id": "UNIQUE_ID"},
+        }
+
+    RETURN_TYPES = ("PIPE_LINE",)
+    RETURN_NAMES = ("pipe",)
+    FUNCTION = "combine"
+    # OUTPUT_NODE = True
+    CATEGORY = "Fooocus"
+
+    def combine(self, pipe, model, pos, neg, latent, vae, switch, my_unique_id=None):
+        pipe["model"] = model
+        pipe["positive"] = pos
+        pipe["negative"] = neg
+        pipe["latent"] = latent
+        pipe["vae"] = vae
+        pipe["switch"] = switch
+        return pipe
+
+
 class preDetailerFix:
     @classmethod
     def INPUT_TYPES(s):
@@ -1170,7 +1215,7 @@ class preDetailerFix:
                 "bbox_segm_pipe": ("PIPE_LINE",),
                 "sam_pipe": ("PIPE_LINE",),
                 "optional_image": ("IMAGE",),
-        },
+            },
         }
 
     RETURN_TYPES = ("PIPE_LINE",)
@@ -1180,7 +1225,9 @@ class preDetailerFix:
 
     CATEGORY = "Fooocus/Fix"
 
-    def doit(self, pipe, guide_size, guide_size_for, max_size, seed, steps, cfg, sampler_name, scheduler, denoise, feather, noise_mask, force_inpaint, drop_size, wildcard, cycle, bbox_segm_pipe=None, sam_pipe=None, optional_image=None):
+    def doit(self, pipe, guide_size, guide_size_for, max_size, seed, steps, cfg, sampler_name, scheduler, denoise,
+             feather, noise_mask, force_inpaint, drop_size, wildcard, cycle, bbox_segm_pipe=None, sam_pipe=None,
+             optional_image=None):
         tasks = pipe["tasks"] if "tasks" in pipe else None
         if tasks is None:
             raise Exception(f"[ERROR] pipe['tasks'] is missing")
@@ -1254,7 +1301,7 @@ class detailerFix:
         },
             "optional": {
                 "model": ("MODEL",),
-        },
+            },
             "hidden": {"prompt": "PROMPT", "extra_pnginfo": "EXTRA_PNGINFO", "my_unique_id": "UNIQUE_ID", }
         }
 
@@ -1266,7 +1313,8 @@ class detailerFix:
 
     CATEGORY = "Fooocus/Fix"
 
-    def doit(self, pipe, image_output, link_id, save_prefix, model=None, prompt=None, extra_pnginfo=None, my_unique_id=None):
+    def doit(self, pipe, image_output, link_id, save_prefix, model=None, prompt=None, extra_pnginfo=None,
+             my_unique_id=None):
 
         my_unique_id = int(my_unique_id)
 
@@ -1319,7 +1367,8 @@ class detailerFix:
                 task['c'], task['uc'], denoise, feather, noise_mask, force_inpaint,
                 bbox_threshold, bbox_dilation, bbox_crop_factor,
                 sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
-                sam_mask_hint_use_negative, drop_size, bbox_detector_opt, wildcard, cycle, sam_model_opt, segm_detector_opt,
+                sam_mask_hint_use_negative, drop_size, bbox_detector_opt, wildcard, cycle, sam_model_opt,
+                segm_detector_opt,
                 detailer_hook=None)
             result_imgs.extend(result_img)
 
@@ -1368,11 +1417,11 @@ class ultralyticsDetectorForDetailerFix:
         bboxs = ["bbox/" + x for x in folder_paths.get_filename_list("ultralytics_bbox")]
         segms = ["segm/" + x for x in folder_paths.get_filename_list("ultralytics_segm")]
         return {"required":
-                {"model_name": (bboxs + segms,),
-                 "bbox_threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
-                 "bbox_dilation": ("INT", {"default": 10, "min": -512, "max": 512, "step": 1}),
-                 "bbox_crop_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10, "step": 0.1}),
-                 }
+                    {"model_name": (bboxs + segms,),
+                     "bbox_threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                     "bbox_dilation": ("INT", {"default": 10, "min": -512, "max": 512, "step": 1}),
+                     "bbox_crop_factor": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10, "step": 0.1}),
+                     }
                 }
 
     RETURN_TYPES = ("PIPE_LINE",)
@@ -1414,17 +1463,18 @@ class samLoaderForDetailerFix:
 
     CATEGORY = "Fooocus/Fix"
 
-    def doit(self, model_name, device_mode, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold, sam_mask_hint_use_negative):
+    def doit(self, model_name, device_mode, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion,
+             sam_mask_hint_threshold, sam_mask_hint_use_negative):
         if 'SAMLoader' not in ALL_NODE_CLASS_MAPPINGS:
             raise Exception(f"[ERROR] To use SAMLoader, you need to install 'Impact Pack'")
         cls = ALL_NODE_CLASS_MAPPINGS['SAMLoader']
         (sam_model,) = cls().load_model(model_name, device_mode)
-        pipe = (sam_model, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold, sam_mask_hint_use_negative)
+        pipe = (sam_model, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold,
+                sam_mask_hint_use_negative)
         return (pipe,)
 
 
 NODE_CLASS_MAPPINGS = {
-
     "Fooocus Loader": FooocusLoader,
     "Fooocus PreKSampler": FooocusPreKSampler,
     "Fooocus KSampler": FooocusKsampler,
@@ -1435,6 +1485,7 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus ApplyImagePrompt": FooocusApplyImagePrompt,
     "Fooocus Inpaint": FooocusInpaint,
     "Fooocus PipeOut": FooocusPipeOut,
+    "Fooocus PipeIn": FooocusPipeIn,
     # fix
     "Fooocus preDetailerFix": preDetailerFix,
     "Fooocus ultralyticsDetectorPipe": ultralyticsDetectorForDetailerFix,
