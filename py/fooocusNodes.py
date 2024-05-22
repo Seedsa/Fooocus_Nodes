@@ -649,13 +649,20 @@ class FooocusPreKSampler:
 
         log_node_info('Moving model to GPU ...')
         new_pipe = {
+            "image_number": 1,  # should be reseted to one
+            "base_model_name": pipe['base_model_name'],
+            "refiner_model_name": pipe['refiner_model_name'],
+            "optional_lora_stack": pipe['optional_lora_stack'],
+            "use_cn": pipe['use_cn'],
+            "refiner_switch": switch,
+            "positive_prompt": pipe["positive_prompt"],
+            "negative_prompt": pipe["negative_prompt"],
             "tasks": tasks,
             "positive": positive,
             "negative": negative,
             "seed": seed,
             "steps": steps,
             "cfg": cfg_scale,
-            "switch": switch,
             "refiner_swap_method": refiner_swap_method,
             "sampler_name": final_sampler_name,
             "scheduler": final_scheduler_name,
