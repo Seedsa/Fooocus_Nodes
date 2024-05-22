@@ -753,6 +753,9 @@ class FooocusKsampler:
         }
         del pipe
 
+        # Combine the processed images back into a single tensor
+        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
+        
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
@@ -764,10 +767,7 @@ class FooocusKsampler:
                 all_imgs, save_prefix, prompt, extra_pnginfo)
 
         if image_output == "Hide":
-            return {"ui": {"value": list()}, "result": (new_pipe, all_imgs)}
-        
-        # Combine the processed images back into a single tensor
-        base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
+            return {"ui": {"value": list()}, "result": (new_pipe, base_image)}
         
         results["result"] = new_pipe, base_image
         return results
