@@ -762,7 +762,7 @@ class FooocusKsampler:
 
         # Combine the processed images back into a single tensor
         base_image = torch.stack([tensor.squeeze() for tensor in all_imgs])
-        
+
         if image_output in ("Save", "Hide/Save"):
             saveimage = SaveImage()
             results = saveimage.save_images(
@@ -775,7 +775,7 @@ class FooocusKsampler:
 
         if image_output == "Hide":
             return {"ui": {"value": list()}, "result": (new_pipe, base_image)}
-        
+
         results["result"] = new_pipe, base_image
         return results
 
@@ -786,7 +786,6 @@ class FooocusUpscale:
         return {
             "required": {
                 "pipe": ("PIPE_LINE",),
-                "image": ("IMAGE",),
                 "upscale": ([1.5, 2.0], {"default": 1.5, }),
                 "steps": ("INT", {"default": 18, "min": 1, "max": 100}),
                 "denoise": ("FLOAT", {"default": 0.382, "min": 0.00, "max": 1.00, "step": 0.001},),
@@ -798,6 +797,9 @@ class FooocusUpscale:
                 "prompt": "PROMPT",
                 "extra_pnginfo": "EXTRA_PNGINFO",
             },
+            "optional": {
+                "image": ("IMAGE",),
+            },
         }
     RETURN_TYPES = ("PIPE_LINE", "IMAGE")
     RETURN_NAMES = ("pipe", "image")
@@ -805,9 +807,13 @@ class FooocusUpscale:
     FUNCTION = "FooocusUpscale"
     CATEGORY = "Fooocus"
 
-    def FooocusUpscale(self, pipe, image, upscale, denoise, fast, steps, image_output, save_prefix, prompt=None, extra_pnginfo=None):
+    def FooocusUpscale(self, pipe, upscale, denoise, fast, steps, image_output, save_prefix, image=None, prompt=None, extra_pnginfo=None):
         all_imgs = []
-        all_steps = steps * len(image)
+        if "images" in pipe:
+            images = pipe["images"]
+        else:
+            images = image
+        all_steps = steps * len(images)
         pbar = comfy.utils.ProgressBar(all_steps)
         log_node_info('Downloading upscale models ...')
         modules.config.downloading_upscale_model()
@@ -816,7 +822,7 @@ class FooocusUpscale:
             preview_bytes = None
             pbar.update_absolute(step + 1, total_steps, preview_bytes)
 
-        for image_id, img in enumerate(image):
+        for image_id, img in enumerate(images):
             print(f'upscale image #{image_id+1} ...')
             img = img.unsqueeze(0)
             img = img[0].numpy()
@@ -879,7 +885,7 @@ class FooocusUpscale:
             height = H * 8
             print(f'Final resolution is {str((height, width))}.')
 
-            if pipe['tasks'] is not None and len(pipe['tasks']) == len(image):
+            if pipe['tasks'] is not None and len(pipe['tasks']) == len(images):
                 task = pipe["tasks"][image_id]
                 positive_cond, negative_cond = task['c'], task['uc']
             else:
