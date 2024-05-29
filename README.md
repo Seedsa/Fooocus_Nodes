@@ -30,6 +30,7 @@ use_model_cache = True
 - [x] Fooocus ImagePrompt&FaceSwap
 - [x] Fooocus Canny&CPDS
 - [x] Fooocus Styles&PromptExpansion
+- [x] Fooocus DeftailerFix
 
 # Workflows
 

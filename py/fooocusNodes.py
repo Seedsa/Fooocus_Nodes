@@ -116,8 +116,8 @@ class FooocusLoader:
                 "refiner_model_name": (["None"] + folder_paths.get_filename_list("checkpoints"), {"default": "None"},),
                 "refiner_switch": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1, "step": 0.1},),
                 "refiner_swap_method": (["joint", "separate", "vae"],),
-                "positive_prompt": ("STRING", {"forceInput": True}),
-                "negative_prompt": ("STRING", {"forceInput": True}),
+                "positive": ("STRING", {"default":"", "placeholder": "Positive", "multiline": True}),
+                "negative": ("STRING", {"default":"", "placeholder": "Negative", "multiline": True}),
                 "resolution": (resolution_strings, {"default": "1024 x 1024"}),
                 "empty_latent_width": ("INT", {"default": 1024, "min": 64, "max": 2048, "step": 8},),
                 "empty_latent_height": ("INT", {"default": 1024, "min": 64, "max": 2048, "step": 8},),
@@ -161,11 +161,12 @@ class FooocusLoader:
             for key, value in kwargs.items()
             if key not in ("empty_latent_width", "empty_latent_height")
         }
-        positive_prompt = kwargs["positive_prompt"]
+        positive_prompt = kwargs["positive"]
+        negative_prompt = kwargs["negative"]
         pipe.update(
             {
                 "positive_prompt": positive_prompt,
-                "negative_prompt": kwargs["negative_prompt"],
+                "negative_prompt": negative_prompt,
                 "latent_width": empty_latent_width,
                 "latent_height": empty_latent_height,
                 "optional_lora_stack": optional_lora_stack,
