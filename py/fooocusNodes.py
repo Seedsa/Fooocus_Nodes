@@ -1,8 +1,8 @@
 import os
 import sys
 
-sys.path.append(os.path.dirname(__file__))
 modules_path = os.path.dirname(os.path.realpath(__file__))
+sys.path.append(modules_path)
 from modules.patch import PatchSettings, patch_settings, patch_all
 patch_all()
 import numpy as np
@@ -753,6 +753,7 @@ class FooocusKsampler:
                 all_imgs.extend(imgs)
             except Exception as e:
                 print('task stopped')
+                raise e
 
         new_pipe = {
             **pipe,
