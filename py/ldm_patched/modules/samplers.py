@@ -2,7 +2,7 @@ from ldm_patched.k_diffusion import sampling as k_diffusion_sampling
 from ldm_patched.unipc import uni_pc
 import torch
 import collections
-from ldm_patched.modules import model_management
+import comfy.model_management as model_management
 import math
 
 def get_area_and_mult(conds, x_in, timestep_in):

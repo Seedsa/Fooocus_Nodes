@@ -8,7 +8,7 @@ from typing import Optional, Any
 from .diffusionmodules.util import checkpoint, AlphaBlender, timestep_embedding
 from .sub_quadratic_attention import efficient_dot_product_attention
 
-from ldm_patched.modules import model_management
+import comfy.model_management as model_management
 
 if model_management.xformers_enabled():
     import xformers
