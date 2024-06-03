@@ -120,7 +120,7 @@ def downloading_ip_adapters(v):
 
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors",
-        model_dir="clip_vison",
+        model_dir="clip_vision",
         file_name="clip_vision_vit_h.safetensors",
     )
     results += [folder_paths.get_full_path("clip_vision", "clip_vision_vit_h.safetensors")]
