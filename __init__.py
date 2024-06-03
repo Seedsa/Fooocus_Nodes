@@ -1,13 +1,28 @@
 import os
 import importlib
 import shutil
+import folder_paths
+
+
+def create_folder_and_update_paths(folder_name):
+    folder_path = os.path.join(folder_paths.models_dir, folder_name)
+    os.makedirs(folder_path, exist_ok=True)
+    folder_paths.folder_names_and_paths[folder_name] = (
+        [
+            folder_path,
+            *folder_paths.folder_names_and_paths.get(folder_name, [[], set()])[0]
+        ],
+        folder_paths.supported_pt_extensions
+    )
+create_folder_and_update_paths("fooocus_expansion")
+create_folder_and_update_paths("inpaint")
+create_folder_and_update_paths("ipadapter")
+
 from .py.modules.model_loader import load_file_from_url
 from .py.modules.config import (
-    path_vae_approx as vae_approx_path,
     path_fooocus_expansion as fooocus_expansion_path,
 )
 from .py import log
-from .py.modules.model_loader import load_file_from_url
 
 
 node_list = [
@@ -63,12 +78,12 @@ def download_models():
 
     for file_name, url in vae_approx_filenames:
         load_file_from_url(
-            url=url, model_dir=vae_approx_path, file_name=file_name)
+            url=url, model_dir="vae_approx", file_name=file_name)
 
     install_expansion()
     load_file_from_url(
         url='https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_expansion.bin',
-        model_dir=fooocus_expansion_path,
+        model_dir="fooocus_expansion",
         file_name='pytorch_model.bin'
     )
 

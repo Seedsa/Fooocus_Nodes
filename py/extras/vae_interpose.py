@@ -8,7 +8,6 @@ import comfy.model_management
 
 from ldm_patched.modules.model_patcher import ModelPatcher
 import folder_paths
-path_vae_approx=folder_paths.get_folder_paths('vae_approx')[0]
 
 class Block(nn.Module):
     def __init__(self, size):
@@ -63,7 +62,7 @@ class Interposer(nn.Module):
 
 
 vae_approx_model = None
-vae_approx_filename = os.path.join(path_vae_approx, 'xl-to-v1_interposer-v3.1.safetensors')
+vae_approx_filename = folder_paths.get_full_path("vae_approx", 'xl-to-v1_interposer-v3.1.safetensors')
 
 
 def parse(x):

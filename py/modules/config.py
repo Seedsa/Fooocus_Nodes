@@ -31,57 +31,11 @@ BASE_RESOLUTIONS = [
 ]
 
 
-def get_base_path_from_yaml():
-    """
-    Returns:
-        str or None: The value of base_path from the YAML file for confmyui or None if not found.
-    """
-    yaml_file = os.path.join(folder_paths.base_path, "extra_model_paths.yaml")
-    try:
-        # Open the YAML file and load its content
-        with open(yaml_file, "r") as file:
-            yaml_data = yaml.safe_load(file)
-
-        # Access the 'base_path' key from the YAML data
-        base_path = yaml_data.get("comfyui", {}).get("base_path")
-        return base_path
-
-    except FileNotFoundError:
-        return None
-    except yaml.YAMLError as e:
-        return None
-
-
-def get_external_paths(name):
-    base_path = get_base_path_from_yaml()
-    default_paths = {
-        "prompt_expansion/fooocus_expansion": "prompt_expansion/fooocus_expansion",
-        "ipadapter": "ipadapter",
-        "inpaint": "inpaint",
-    }
-    for key, sub_path in default_paths.items():
-        if key in name:
-            if base_path is not None:
-                return os.path.join(base_path, sub_path)
-            else:
-                return os.path.join(folder_paths.models_dir, sub_path)
-    try:
-        return folder_paths.get_folder_paths(name)[-1]
-    except Exception as e:
-        return folder_paths.get_folder_paths(name)[0]
-
 
 wildcard_filenames = []
-paths_checkpoints = get_external_paths("checkpoints")
-paths_loras = get_external_paths("loras")
-path_embeddings = get_external_paths("embeddings")
-path_vae_approx = get_external_paths("vae_approx")
-path_controlnet = get_external_paths("controlnet")
-path_clip_vision = get_external_paths("clip_vision")
-path_upscale_models = get_external_paths("upscale_models")
-path_fooocus_expansion = get_external_paths("prompt_expansion/fooocus_expansion")
-path_inpaint = get_external_paths("inpaint")
-path_ipadapter = get_external_paths("ipadapter")
+path_controlnet = folder_paths.get_folder_paths("controlnet")[0]
+path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[0]
+
 
 path_styles = os.path.join(Path(__file__).parent.parent.parent, "sdxl_styles")
 
@@ -107,35 +61,36 @@ def downloading_inpaint_models(v):
 
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/fooocus_inpaint_head.pth",
-        model_dir=path_inpaint,
+        model_dir="inpaint",
         file_name="fooocus_inpaint_head.pth",
     )
-    head_file = os.path.join(path_inpaint, "fooocus_inpaint_head.pth")
+    head_file = folder_paths.get_full_path("inpaint", "fooocus_inpaint_head.pth")
     patch_file = None
 
     if v == "v1":
         load_file_from_url(
             url="https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint.fooocus.patch",
-            model_dir=path_inpaint,
+            model_dir="inpaint",
             file_name="inpaint.fooocus.patch",
         )
-        patch_file = os.path.join(path_inpaint, "inpaint.fooocus.patch")
+
+        patch_file = folder_paths.get_full_path("inpaint", "inpaint.fooocus.patch")
 
     if v == "v2.5":
         load_file_from_url(
             url="https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint_v25.fooocus.patch",
-            model_dir=path_inpaint,
+            model_dir="inpaint",
             file_name="inpaint_v25.fooocus.patch",
         )
-        patch_file = os.path.join(path_inpaint, "inpaint_v25.fooocus.patch")
+        patch_file = folder_paths.get_full_path("inpaint", "inpaint_v25.fooocus.patch")
 
     if v == "v2.6":
         load_file_from_url(
             url="https://huggingface.co/lllyasviel/fooocus_inpaint/resolve/main/inpaint_v26.fooocus.patch",
-            model_dir=path_inpaint,
+            model_dir="inpaint",
             file_name="inpaint_v26.fooocus.patch",
         )
-        patch_file = os.path.join(path_inpaint, "inpaint_v26.fooocus.patch")
+        patch_file = folder_paths.get_full_path("inpaint", "inpaint_v26.fooocus.patch")
 
     return head_file, patch_file
 
@@ -143,19 +98,19 @@ def downloading_inpaint_models(v):
 def downloading_controlnet_canny():
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/control-lora-canny-rank128.safetensors",
-        model_dir=path_controlnet,
+        model_dir="controlnet",
         file_name="control-lora-canny-rank128.safetensors",
     )
-    return os.path.join(path_controlnet, "control-lora-canny-rank128.safetensors")
+    return folder_paths.get_full_path("controlnet","control-lora-canny-rank128.safetensors")
 
 
 def downloading_controlnet_cpds():
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_xl_cpds_128.safetensors",
-        model_dir=path_controlnet,
+        model_dir="controlnet",
         file_name="fooocus_xl_cpds_128.safetensors",
     )
-    return os.path.join(path_controlnet, "fooocus_xl_cpds_128.safetensors")
+    return folder_paths.get_full_path("controlnet","fooocus_xl_cpds_128.safetensors")
 
 
 def downloading_ip_adapters(v):
@@ -165,40 +120,40 @@ def downloading_ip_adapters(v):
 
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/clip_vision_vit_h.safetensors",
-        model_dir=path_clip_vision,
+        model_dir="clip_vison",
         file_name="clip_vision_vit_h.safetensors",
     )
-    results += [os.path.join(path_clip_vision, "clip_vision_vit_h.safetensors")]
+    results += [folder_paths.get_full_path("clip_vision", "clip_vision_vit_h.safetensors")]
 
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_ip_negative.safetensors",
-        model_dir=path_ipadapter,
+        model_dir="ipadapter",
         file_name="fooocus_ip_negative.safetensors",
     )
-    results += [os.path.join(path_ipadapter, "fooocus_ip_negative.safetensors")]
+    results += [folder_paths.get_full_path("ipadapter", "fooocus_ip_negative.safetensors")]
 
     if v == "ip":
         load_file_from_url(
             url="https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus_sdxl_vit-h.bin",
-            model_dir=path_ipadapter,
+            model_dir="ipadapter",
             file_name="ip-adapter-plus_sdxl_vit-h.bin",
         )
-        results += [os.path.join(path_ipadapter, "ip-adapter-plus_sdxl_vit-h.bin")]
+        results += [folder_paths.get_full_path("ipadapter", "ip-adapter-plus_sdxl_vit-h.bin")]
 
     if v == "face":
         load_file_from_url(
             url="https://huggingface.co/lllyasviel/misc/resolve/main/ip-adapter-plus-face_sdxl_vit-h.bin",
-            model_dir=path_ipadapter,
+            model_dir="ipadapter",
             file_name="ip-adapter-plus-face_sdxl_vit-h.bin",
         )
-        results += [os.path.join(path_ipadapter, "ip-adapter-plus-face_sdxl_vit-h.bin")]
+        results += [folder_paths.get_full_path("ipadapter", "ip-adapter-plus-face_sdxl_vit-h.bin")]
     return results
 
 
 def downloading_upscale_model():
     load_file_from_url(
         url="https://huggingface.co/lllyasviel/misc/resolve/main/fooocus_upscaler_s409985e5.bin",
-        model_dir=path_upscale_models,
+        model_dir="upscale_models",
         file_name="fooocus_upscaler_s409985e5.bin",
     )
-    return os.path.join(path_upscale_models, "fooocus_upscaler_s409985e5.bin")
+    return folder_paths.get_full_path("upscale_models", "fooocus_upscaler_s409985e5.bin")

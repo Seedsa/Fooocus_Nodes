@@ -1,7 +1,7 @@
 import os
 from urllib.parse import urlparse
 from typing import Optional
-
+import folder_paths
 
 def load_file_from_url(
         url: str,
@@ -14,11 +14,15 @@ def load_file_from_url(
 
     Returns the path to the downloaded file.
     """
-    os.makedirs(model_dir, exist_ok=True)
     if not file_name:
         parts = urlparse(url)
         file_name = os.path.basename(parts.path)
-    cached_file = os.path.abspath(os.path.join(model_dir, file_name))
+    # 从所有文件夹中寻找
+    cached_file = folder_paths.get_full_path(model_dir, file_name)
+    if cached_file is None:
+        os.makedirs(folder_paths.get_folder_paths(model_dir)[0], exist_ok=True)
+        cached_file = os.path.join(folder_paths.get_folder_paths(model_dir)[0],file_name)
+
     if not os.path.exists(cached_file):
         print(f'Downloading: "{url}" to {cached_file}\n')
         from torch.hub import download_url_to_file
