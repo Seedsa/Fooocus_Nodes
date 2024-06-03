@@ -34,7 +34,7 @@ BASE_RESOLUTIONS = [
 
 wildcard_filenames = []
 path_controlnet = folder_paths.get_folder_paths("controlnet")[0]
-path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[0]
+path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[-1]
 
 
 path_styles = os.path.join(Path(__file__).parent.parent.parent, "sdxl_styles")
