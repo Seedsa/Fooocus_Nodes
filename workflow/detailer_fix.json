@@ -1,0 +1,508 @@
+{
+  "last_node_id": 10,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 5,
+      "type": "Fooocus Styles",
+      "pos": [
+        297,
+        494
+      ],
+      "size": [
+        425,
+        500
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "fooocus_styles",
+          "type": "FOOOCUS_STYLES",
+          "links": [
+            3
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus Styles",
+        "values": [
+          "Fooocus V2",
+          "Fooocus Enhance",
+          "Fooocus Sharp"
+        ]
+      },
+      "widgets_values": [
+        "fooocus_styles",
+        "Fooocus V2,Fooocus Enhance,Fooocus Sharp"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "Fooocus samLoaderPipe",
+      "pos": [
+        1460,
+        748
+      ],
+      "size": {
+        "0": 315,
+        "1": 226
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "sam_pipe",
+          "type": "PIPE_LINE",
+          "links": [
+            6
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus samLoaderPipe"
+      },
+      "widgets_values": [
+        "sam_vit_b_01ec64.pth",
+        "AUTO",
+        "center-1",
+        0,
+        0.93,
+        0,
+        0.7,
+        "False"
+      ]
+    },
+    {
+      "id": 7,
+      "type": "Fooocus ultralyticsDetectorPipe",
+      "pos": [
+        1456,
+        532
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "bbox_segm_pipe",
+          "type": "PIPE_LINE",
+          "links": [
+            4
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus ultralyticsDetectorPipe"
+      },
+      "widgets_values": [
+        "bbox/face_yolov8m.pt",
+        0.5,
+        10,
+        3
+      ]
+    },
+    {
+      "id": 6,
+      "type": "Fooocus preDetailerFix",
+      "pos": [
+        1950,
+        165
+      ],
+      "size": {
+        "0": 400,
+        "1": 496
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "link": 7
+        },
+        {
+          "name": "bbox_segm_pipe",
+          "type": "PIPE_LINE",
+          "link": 4
+        },
+        {
+          "name": "sam_pipe",
+          "type": "PIPE_LINE",
+          "link": 6
+        },
+        {
+          "name": "optional_image",
+          "type": "IMAGE",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "links": [
+            9
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus preDetailerFix"
+      },
+      "widgets_values": [
+        384,
+        true,
+        1024,
+        143125740275777,
+        "randomize",
+        20,
+        8,
+        "euler",
+        "normal",
+        0.5,
+        5,
+        true,
+        true,
+        10,
+        "",
+        1
+      ]
+    },
+    {
+      "id": 2,
+      "type": "Fooocus Loader",
+      "pos": [
+        300,
+        142
+      ],
+      "size": {
+        "0": 400,
+        "1": 270
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "optional_lora_stack",
+          "type": "LORA_STACK",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "links": [
+            2
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus Loader"
+      },
+      "widgets_values": [
+        "juggernautXL_v8Rundiffusion.safetensors",
+        "None",
+        0.5,
+        "joint",
+        "1girl,fullbody,street",
+        "",
+        "1024 x 1024",
+        1024,
+        1024,
+        1
+      ]
+    },
+    {
+      "id": 10,
+      "type": "Fooocus detailerFix",
+      "pos": [
+        2465,
+        172
+      ],
+      "size": [
+        315,
+        338.00000381469727
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "link": 9
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus detailerFix"
+      },
+      "widgets_values": [
+        "Preview",
+        0,
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 4,
+      "type": "Fooocus KSampler",
+      "pos": [
+        1432,
+        158
+      ],
+      "size": {
+        "0": 315,
+        "1": 290
+      },
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "link": 1
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "links": [
+            7
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus KSampler"
+      },
+      "widgets_values": [
+        "Preview",
+        "ComfyUI"
+      ]
+    },
+    {
+      "id": 3,
+      "type": "Fooocus PreKSampler",
+      "pos": [
+        884,
+        152
+      ],
+      "size": {
+        "0": 324.38671875,
+        "1": 423.25390625
+      },
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "link": 2
+        },
+        {
+          "name": "image_to_latent",
+          "type": "IMAGE",
+          "link": null
+        },
+        {
+          "name": "latent",
+          "type": "LATENT",
+          "link": null
+        },
+        {
+          "name": "fooocus_inpaint",
+          "type": "FOOOCUS_INPAINT",
+          "link": null
+        },
+        {
+          "name": "fooocus_styles",
+          "type": "FOOOCUS_STYLES",
+          "link": 3
+        }
+      ],
+      "outputs": [
+        {
+          "name": "pipe",
+          "type": "PIPE_LINE",
+          "links": [
+            1
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "clip",
+          "type": "CLIP",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "vae",
+          "type": "VAE",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "CONDITIONING+",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        },
+        {
+          "name": "CONDITIONING-",
+          "type": "CONDITIONING",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus PreKSampler"
+      },
+      "widgets_values": [
+        30,
+        4,
+        "dpmpp_2m_sde_gpu",
+        "karras",
+        576360493396230,
+        "randomize",
+        1,
+        "Simple",
+        2,
+        7,
+        1.5,
+        0.8,
+        0.3,
+        0.25,
+        false
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      3,
+      0,
+      4,
+      0,
+      "PIPE_LINE"
+    ],
+    [
+      2,
+      2,
+      0,
+      3,
+      0,
+      "PIPE_LINE"
+    ],
+    [
+      3,
+      5,
+      0,
+      3,
+      4,
+      "FOOOCUS_STYLES"
+    ],
+    [
+      4,
+      7,
+      0,
+      6,
+      1,
+      "PIPE_LINE"
+    ],
+    [
+      6,
+      8,
+      0,
+      6,
+      2,
+      "PIPE_LINE"
+    ],
+    [
+      7,
+      4,
+      0,
+      6,
+      0,
+      "PIPE_LINE"
+    ],
+    [
+      9,
+      6,
+      0,
+      10,
+      0,
+      "PIPE_LINE"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.6303940863128491,
+      "offset": {
+        "0": -276.91583251953125,
+        "1": 143.10302734375
+      }
+    }
+  },
+  "version": 0.4
+}

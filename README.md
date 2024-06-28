@@ -32,29 +32,11 @@ use_model_cache = True
 - [x] Fooocus Styles&PromptExpansion
 - [x] Fooocus DeftailerFix
 
-# Workflows
+# Example Workflows
 
-Here are some examples of basic and advanced workflows supported by Fooocus Nodes:
+[example workflows](./workflow/)
 
-## Basic
-
-![basic](/workflow/basic.png)
-
-## FooocusStyles
-
-![basic](/workflow/basic+fooocus_styles.png)
-
-## Canny&CPDS
-
-![basic](/workflow/canny&cpds.png)
-
-## imagePrompt&FaceSwap
-
-![basic](/workflow/imagePrompt&faceswap.png)
-
-## Inpaint&Outpaint
-
-![basic](/workflow/inpaint&outpaint.png)
+![basic](/workflow/screenshot.png)
 
 ## Credits
 
