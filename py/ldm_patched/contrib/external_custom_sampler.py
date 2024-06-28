@@ -1,4 +1,4 @@
-# https://github.com/comfyanonymous/ComfyUI/blob/master/nodes.py 
+# https://github.com/comfyanonymous/ComfyUI/blob/master/nodes.py
 
 import ldm_patched.modules.samplers
 import ldm_patched.modules.sample
@@ -256,6 +256,9 @@ class SamplerCustom:
     def sample(self, model, add_noise, noise_seed, cfg, positive, negative, sampler, sigmas, latent_image):
         latent = latent_image
         latent_image = latent["samples"]
+        latent = latent.copy()
+        latent_image = ldm_patched.modules.sample.fix_empty_latent_channels(model, latent_image)
+        latent["samples"] = latent_image
         if not add_noise:
             noise = torch.zeros(latent_image.size(), dtype=latent_image.dtype, layout=latent_image.layout, device="cpu")
         else:

@@ -1,6 +1,7 @@
 
 class LatentFormat:
     scale_factor = 1.0
+    latent_channels = 4
     latent_rgb_factors = None
     taesd_decoder_name = None
 
