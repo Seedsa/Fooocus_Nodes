@@ -54,6 +54,12 @@ class ModelPatcher:
     def __init__(self, model, load_device, offload_device, size=0, current_device=None, weight_inplace_update=False):
         self.size = size
         self.model = model
+        if not hasattr(self.model, 'device'):
+            logging.info("Model doesn't have a device attribute.")
+            self.model.device = offload_device
+        elif self.model.device is None:
+            self.model.device = offload_device
+
         self.patches = {}
         self.backup = {}
         self.object_patches = {}
@@ -524,3 +530,6 @@ class ModelPatcher:
             comfy.utils.set_attr(self.model, k, self.object_patches_backup[k])
 
         self.object_patches_backup.clear()
+
+    def current_loaded_device(self):
+        return self.model.device
