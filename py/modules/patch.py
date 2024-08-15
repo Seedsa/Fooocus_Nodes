@@ -442,15 +442,6 @@ def patched_unet_forward(self, x, timesteps=None, context=None, y=None, control=
         return self.out(h)
 
 
-def patched_load_models_gpu(*args, **kwargs):
-    execution_start_time = time.perf_counter()
-    y = comfy.model_management.load_models_gpu_origin(*args, **kwargs)
-    moving_time = time.perf_counter() - execution_start_time
-    if moving_time > 0.1:
-        print(f'[Fooocus Model Management] Moving model(s) has taken {moving_time:.2f} seconds')
-    return y
-
-
 def build_loaded(module, loader_name):
     original_loader_name = loader_name + '_origin'
 
@@ -493,10 +484,6 @@ def patch_all():
     patch_all_precision()
     patch_all_clip()
 
-    # if not hasattr(comfy.model_management, 'load_models_gpu_origin'):
-        # comfy.model_management.load_models_gpu_origin = comfy.model_management.load_models_gpu
-
-    # comfy.model_management.load_models_gpu = patched_load_models_gpu
     ldm_patched.modules.model_patcher.ModelPatcher.calculate_weight = calculate_weight_patched
     ldm_patched.controlnet.cldm.ControlNet.forward = patched_cldm_forward
     ldm_patched.ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = patched_unet_forward

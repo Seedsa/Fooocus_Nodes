@@ -4,14 +4,12 @@ import torch
 import modules.patch
 import modules.config
 import comfy.model_management
-import ldm_patched.modules.latent_formats
 import modules.inpaint_worker
 import extras.vae_interpose as vae_interpose
 from extras.expansion import FooocusExpansion
 
 from ldm_patched.modules.model_base import SDXL, SDXLRefiner
 from modules.sample_hijack import clip_separate
-from modules.util import get_file_from_folder_list, get_enabled_loras
 
 
 model_base = core.StableDiffusionModel()
