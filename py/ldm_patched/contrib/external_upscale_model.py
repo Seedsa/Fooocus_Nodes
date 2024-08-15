@@ -1,8 +1,8 @@
-# https://github.com/comfyanonymous/ComfyUI/blob/master/nodes.py 
+# https://github.com/comfyanonymous/ComfyUI/blob/master/nodes.py
 
 import os
 from ldm_patched.pfn import model_loading
-from ldm_patched.modules import model_management
+from comfy import model_management
 import torch
 import ldm_patched.modules.utils
 import ldm_patched.utils.path_utils
