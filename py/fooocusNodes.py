@@ -12,7 +12,8 @@ import modules.config
 import modules.flags
 import modules.default_pipeline as pipeline
 import modules.core as core
-from modules.sdxl_styles import apply_style, apply_wildcards, fooocus_expansion, apply_arrays
+from modules.sdxl_styles import apply_style, fooocus_expansion, apply_arrays, random_style_name, get_random_style
+from modules.util import apply_wildcards
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
 import modules.advanced_parameters as advanced_parameters
@@ -456,12 +457,22 @@ class FooocusPreKSampler:
                 negative_basic_workloads = []
 
                 if use_style:
+                    placeholder_replaced = False
+
                     for s in style_selections:
                         if s == fooocus_expansion:
                             continue
-                        p, n = apply_style(s, positive=task_prompt)
+                        if s == random_style_name:
+                            s = get_random_style(task_rng)
+                            print(f'Using Fooocus Random Style:{s}')
+                        p, n, style_has_placeholder = apply_style(s, positive=task_prompt)
+                        if style_has_placeholder:
+                            placeholder_replaced = True
                         positive_basic_workloads = positive_basic_workloads + p
                         negative_basic_workloads = negative_basic_workloads + n
+
+                    if not placeholder_replaced:
+                        positive_basic_workloads = [task_prompt] + positive_basic_workloads
                 else:
                     positive_basic_workloads.append(task_prompt)
 

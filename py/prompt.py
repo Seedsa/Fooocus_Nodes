@@ -1,6 +1,6 @@
 import os
-from modules.config import path_styles
 
+path_styles = os.path.abspath(os.path.join(os.path.dirname(__file__), '../sdxl_styles/'))
 
 # 风格提示词选择器
 class FooocusStyles:

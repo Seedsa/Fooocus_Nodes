@@ -37,8 +37,6 @@ path_controlnet = folder_paths.get_folder_paths("controlnet")[0]
 path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[-1]
 
 
-path_styles = os.path.join(Path(__file__).parent.parent.parent, "sdxl_styles")
-
 path_wildcards = os.path.join(Path(__file__).parent.parent.parent, "wildcards")
 
 use_model_cache = False
@@ -54,6 +52,8 @@ default_loras = [
 default_loras = [
     (y[0], y[1], y[2]) if len(y) == 3 else (True, y[0], y[1]) for y in default_loras
 ]
+wildcards_max_bfs_depth = 64
+wildcard_filenames = []
 
 
 def downloading_inpaint_models(v):
