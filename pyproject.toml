@@ -1,7 +1,7 @@
 [project]
 name = "fooocus_nodes"
 description = "This extension provides image generation features based on Fooocus."
-version = "1.0.1"
+version = "1.0.2"
 license = "LICENSE"
 dependencies = ["accelerate==0.32.1", "pytorch_lightning==2.3.3", "pygit2==1.15.1", "opencv-contrib-python-headless==4.10.0.84", "httpx==0.27.0", "onnxruntime", "timm==1.0.7"]
 
