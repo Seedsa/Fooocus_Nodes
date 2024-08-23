@@ -1430,6 +1430,33 @@ class samLoaderForDetailerFix:
         pipe = (sam_model, sam_detection_hint, sam_dilation, sam_threshold, sam_bbox_expansion, sam_mask_hint_threshold, sam_mask_hint_use_negative)
         return (pipe,)
 
+class FooocusDescribe:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "image": ("IMAGE",),
+                "image_type": (["Photo", "Anime"], {"default": "Photo"}),
+            }
+        }
+    RETURN_TYPES = ("STRING",)
+    FUNCTION = "describe"
+    CATEGORY = "Fooocus"
+    OUTPUT_NODE = True
+
+    def describe(self, image, image_type):
+        img = image[0].numpy()
+        img = (img * 255).astype(np.uint8)
+        img = HWC3(img)
+        if image_type == 'Photo':
+            from extras.interrogate import default_interrogator as default_interrogator_photo
+            interrogator = default_interrogator_photo
+        else:
+            from extras.wd14tagger import default_interrogator as default_interrogator_anime
+            interrogator = default_interrogator_anime
+        tags = interrogator(img)
+        print(tags)
+        return {"ui": {"tags": tags}, "result": (tags,)}
 
 NODE_CLASS_MAPPINGS = {
 
@@ -1443,6 +1470,7 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus ApplyImagePrompt": FooocusApplyImagePrompt,
     "Fooocus Inpaint": FooocusInpaint,
     "Fooocus PipeOut": FooocusPipeOut,
+    "Fooocus Describe": FooocusDescribe,
     # fix
     "Fooocus preDetailerFix": preDetailerFix,
     "Fooocus ultralyticsDetectorPipe": ultralyticsDetectorForDetailerFix,
