@@ -16,6 +16,7 @@ from modules.sdxl_styles import apply_style, apply_wildcards, fooocus_expansion,
 from extras.expansion import safe_str
 import extras.face_crop as face_crop
 import modules.advanced_parameters as advanced_parameters
+from extras.expansion import FooocusExpansion as Expansion
 import extras.preprocessors as preprocessors
 import extras.ip_adapter as ip_adapter
 from nodes import SaveImage, PreviewImage, MAX_RESOLUTION, NODE_CLASS_MAPPINGS as ALL_NODE_CLASS_MAPPINGS
@@ -1458,6 +1459,39 @@ class FooocusDescribe:
         print(tags)
         return {"ui": {"tags": tags}, "result": (tags,)}
 
+
+class FooocusExpansion:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "prompt": ("STRING", {"multiline": True}),
+            },
+            "optional": {
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xFFFFFFFF}),
+                "log_prompt": ("BOOLEAN", {"default": False},),
+            },
+        }
+    RETURN_TYPES = ("STRING", "INT",)
+    RETURN_NAMES = ("final_prompt", "seed",)
+    FUNCTION = "expansion"
+
+    CATEGORY = "Fooocus"
+
+    def expansion(self, prompt, seed, log_prompt):
+        expansion = Expansion()
+        prompt = remove_empty_str([safe_str(prompt)], default='')[0]
+        max_seed = int(1024 * 1024 * 1024)
+        if not isinstance(seed, int):
+            seed = random.randint(1, max_seed)
+        if seed < 0:
+            seed = - seed
+        seed = seed % max_seed
+        expansion = expansion(prompt, seed)
+        if log_prompt:
+            print(f'[Prompt Expansion] {expansion}')
+        return {"ui": {"expansion": expansion}, "result": (expansion,)}
+
 NODE_CLASS_MAPPINGS = {
 
     "Fooocus Loader": FooocusLoader,
@@ -1471,6 +1505,7 @@ NODE_CLASS_MAPPINGS = {
     "Fooocus Inpaint": FooocusInpaint,
     "Fooocus PipeOut": FooocusPipeOut,
     "Fooocus Describe": FooocusDescribe,
+    "Fooocus Expansion": FooocusExpansion,
     # fix
     "Fooocus preDetailerFix": preDetailerFix,
     "Fooocus ultralyticsDetectorPipe": ultralyticsDetectorForDetailerFix,
