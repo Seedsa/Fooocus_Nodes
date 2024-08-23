@@ -1,0 +1,98 @@
+{
+  "last_node_id": 6,
+  "last_link_id": 5,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "Display Any (rgthree)",
+      "pos": [
+        1777,
+        -46
+      ],
+      "size": [
+        292.4664932986011,
+        196.80439102063673
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 5,
+          "dir": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Display Any (rgthree)"
+      },
+      "widgets_values": [
+        ""
+      ]
+    },
+    {
+      "id": 5,
+      "type": "Fooocus Expansion",
+      "pos": [
+        1271,
+        -46
+      ],
+      "size": {
+        "0": 400,
+        "1": 200
+      },
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "final_prompt",
+          "type": "STRING",
+          "links": [
+            5
+          ],
+          "shape": 3,
+          "slot_index": 0
+        },
+        {
+          "name": "seed",
+          "type": "INT",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus Expansion"
+      },
+      "widgets_values": [
+        "cat",
+        3314052962,
+        "fixed",
+        true
+      ]
+    }
+  ],
+  "links": [
+    [
+      5,
+      5,
+      0,
+      6,
+      0,
+      "*"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8264462809917362,
+      "offset": [
+        -840.342821423602,
+        250.98650741686293
+      ]
+    }
+  },
+  "version": 0.4
+}
