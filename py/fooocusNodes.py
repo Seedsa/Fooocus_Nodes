@@ -118,6 +118,7 @@ class FooocusLoader:
                 "refiner_model_name": (["None"] + folder_paths.get_filename_list("checkpoints"), {"default": "None"},),
                 "refiner_switch": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1, "step": 0.1},),
                 "refiner_swap_method": (["joint", "separate", "vae"],),
+                "clip_skip": ("INT", {"default": 2, "min": -24, "max": 12, "step": 1}),
                 "positive": ("STRING", {"default":"", "placeholder": "Positive", "multiline": True}),
                 "negative": ("STRING", {"default":"", "placeholder": "Negative", "multiline": True}),
                 "resolution": (resolution_strings, {"default": "1024 x 1024"}),
@@ -250,6 +251,7 @@ class FooocusPreKSampler:
         base_model_name = pipe["base_model_name"]
         refiner_model_name = pipe["refiner_model_name"]
         refiner_switch = pipe["refiner_switch"]
+        clip_skip = pipe["clip_skip"]
         loras = pipe["optional_lora_stack"]
         outpaint_selections = []
         disable_seed_increment = False
@@ -296,14 +298,16 @@ class FooocusPreKSampler:
             modules.patch.positive_adm_scale = 1.0
             modules.patch.negative_adm_scale = 1, 0
             modules.patch.adm_scaler_end = 0.0
-
+        seed = int(image_seed)
         print(f'[Parameters] Adaptive CFG = {adaptive_cfg}')
+        print(f'[Parameters] CLIP Skip = {clip_skip}')
         print(f'[Parameters] Sharpness = {sharpness}')
         print(f'[Parameters] ControlNet Softness = {controlnet_softness}')
         print(f'[Parameters] ADM Scale = '
               f'{adm_scaler_positive} : '
               f'{adm_scaler_negative} : '
               f'{adm_scaler_end}')
+        print(f'[Parameters] Seed = {seed}')
 
         patch_settings[pid] = PatchSettings(
             sharpness,
@@ -349,10 +353,6 @@ class FooocusPreKSampler:
         inpaint_mask = None
         inpaint_head_model_path = None
         use_synthetic_refiner = False
-
-        seed = int(image_seed)
-        print(f'[Parameters] Seed = {seed}')
-
         sampler_name = pipe["sampler_name"]
         scheduler_name = pipe["scheduler"]
 
@@ -429,7 +429,7 @@ class FooocusPreKSampler:
                 base_model_additional_loras=base_model_additional_loras,
                 use_synthetic_refiner=use_synthetic_refiner,
             )
-
+            pipeline.set_clip_skip(clip_skip)
             log_node_info('Processing prompts ...')
 
             # for node output
