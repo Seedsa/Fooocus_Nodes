@@ -22,6 +22,14 @@ Set use_model_cache to True:
 use_model_cache = True
 ```
 
+# Comparisons
+
+reproduce the same images generated from Fooocus on ComfyUI
+
+![ComfyUIFooocusNodes](screnshot/FooocusNodes.png)
+
+![Fooocus](screnshot/Fooocus.png)
+
 # Features
 
 - [x] Fooocus Txt2image&Img2img
