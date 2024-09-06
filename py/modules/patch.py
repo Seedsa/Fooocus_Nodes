@@ -49,6 +49,59 @@ class PatchSettings:
 patch_settings = {}
 
 
+def weight_decompose(dora_scale, weight, lora_diff, alpha, strength, intermediate_dtype):
+    dora_scale = comfy.model_management.cast_to_device(dora_scale, weight.device, intermediate_dtype)
+    lora_diff *= alpha
+    weight_calc = weight + lora_diff.type(weight.dtype)
+    weight_norm = (
+        weight_calc.transpose(0, 1)
+        .reshape(weight_calc.shape[1], -1)
+        .norm(dim=1, keepdim=True)
+        .reshape(weight_calc.shape[1], *[1] * (weight_calc.dim() - 1))
+        .transpose(0, 1)
+    )
+
+    weight_calc *= (dora_scale / weight_norm).type(weight.dtype)
+    if strength != 1.0:
+        weight_calc -= weight
+        weight += strength * (weight_calc)
+    else:
+        weight[:] = weight_calc
+    return weight
+
+def pad_tensor_to_shape(tensor: torch.Tensor, new_shape: list[int]) -> torch.Tensor:
+    """
+    Pad a tensor to a new shape with zeros.
+
+    Args:
+        tensor (torch.Tensor): The original tensor to be padded.
+        new_shape (List[int]): The desired shape of the padded tensor.
+
+    Returns:
+        torch.Tensor: A new tensor padded with zeros to the specified shape.
+
+    Note:
+        If the new shape is smaller than the original tensor in any dimension,
+        the original tensor will be truncated in that dimension.
+    """
+    if any([new_shape[i] < tensor.shape[i] for i in range(len(new_shape))]):
+        raise ValueError("The new shape must be larger than the original tensor in all dimensions")
+
+    if len(new_shape) != len(tensor.shape):
+        raise ValueError("The new shape must have the same number of dimensions as the original tensor")
+
+    # Create a new tensor filled with zeros
+    padded_tensor = torch.zeros(new_shape, dtype=tensor.dtype, device=tensor.device)
+
+    # Create slicing tuples for both tensors
+    orig_slices = tuple(slice(0, dim) for dim in tensor.shape)
+    new_slices = tuple(slice(0, dim) for dim in tensor.shape)
+
+    # Copy the original tensor into the new tensor
+    padded_tensor[new_slices] = tensor[orig_slices]
+
+    return padded_tensor
+
 def calculate_weight_patched(patches, weight, key, intermediate_dtype=torch.float32):
     for p in patches:
         strength = p[0]
@@ -68,21 +121,26 @@ def calculate_weight_patched(patches, weight, key, intermediate_dtype=torch.floa
             weight *= strength_model
 
         if isinstance(v, list):
-            v = (calculate_weight(v[1:], v[0].clone(), key, intermediate_dtype=intermediate_dtype), )
+            v = (calculate_weight_patched(v[1:], v[0].clone(), key, intermediate_dtype=intermediate_dtype), )
 
         if len(v) == 1:
             patch_type = "diff"
         elif len(v) == 2:
             patch_type = v[0]
             v = v[1]
-
         if patch_type == "diff":
-            w1 = v[0]
+            diff: torch.Tensor = v[0]
+            # An extra flag to pad the weight if the diff's shape is larger than the weight
+            do_pad_weight = len(v) > 1 and v[1]['pad_weight']
+            if do_pad_weight and diff.shape != weight.shape:
+                print("Pad weight {} from {} to shape: {}".format(key, weight.shape, diff.shape))
+                weight = pad_tensor_to_shape(weight, diff.shape)
+
             if strength != 0.0:
-                if w1.shape != weight.shape:
-                    print("WARNING SHAPE MISMATCH {} WEIGHT NOT MERGED {} != {}".format(key, w1.shape, weight.shape))
+                if diff.shape != weight.shape:
+                    print("WARNING SHAPE MISMATCH {} WEIGHT NOT MERGED {} != {}".format(key, diff.shape, weight.shape))
                 else:
-                    weight += function(strength * comfy.model_management.cast_to_device(w1, weight.device, weight.dtype))
+                    weight += function(strength * comfy.model_management.cast_to_device(diff, weight.device, weight.dtype))
         elif patch_type == "lora": #lora/locon
             mat1 = comfy.model_management.cast_to_device(v[0], weight.device, intermediate_dtype)
             mat2 = comfy.model_management.cast_to_device(v[1], weight.device, intermediate_dtype)
@@ -199,20 +257,40 @@ def calculate_weight_patched(patches, weight, key, intermediate_dtype=torch.floa
             except Exception as e:
                 print("ERROR {} {} {}".format(patch_type, key, e))
         elif patch_type == "glora":
-            if v[4] is not None:
-                alpha = v[4] / v[0].shape[0]
-            else:
-                alpha = 1.0
-
             dora_scale = v[5]
+
+            old_glora = False
+            if v[3].shape[1] == v[2].shape[0] == v[0].shape[0] == v[1].shape[1]:
+                rank = v[0].shape[0]
+                old_glora = True
+
+            if v[3].shape[0] == v[2].shape[1] == v[0].shape[1] == v[1].shape[0]:
+                if old_glora and v[1].shape[0] == weight.shape[0] and weight.shape[0] == weight.shape[1]:
+                    pass
+                else:
+                    old_glora = False
+                    rank = v[1].shape[0]
 
             a1 = comfy.model_management.cast_to_device(v[0].flatten(start_dim=1), weight.device, intermediate_dtype)
             a2 = comfy.model_management.cast_to_device(v[1].flatten(start_dim=1), weight.device, intermediate_dtype)
             b1 = comfy.model_management.cast_to_device(v[2].flatten(start_dim=1), weight.device, intermediate_dtype)
             b2 = comfy.model_management.cast_to_device(v[3].flatten(start_dim=1), weight.device, intermediate_dtype)
 
+            if v[4] is not None:
+                alpha = v[4] / rank
+            else:
+                alpha = 1.0
+
             try:
-                lora_diff = (torch.mm(b2, b1) + torch.mm(torch.mm(weight.flatten(start_dim=1), a2), a1)).reshape(weight.shape)
+                if old_glora:
+                    lora_diff = (torch.mm(b2, b1) + torch.mm(torch.mm(weight.flatten(start_dim=1).to(dtype=intermediate_dtype), a2), a1)).reshape(weight.shape) #old lycoris glora
+                else:
+                    if weight.dim() > 2:
+                        lora_diff = torch.einsum("o i ..., i j -> o j ...", torch.einsum("o i ..., i j -> o j ...", weight.to(dtype=intermediate_dtype), a1), a2).reshape(weight.shape)
+                    else:
+                        lora_diff = torch.mm(torch.mm(weight.to(dtype=intermediate_dtype), a1), a2).reshape(weight.shape)
+                    lora_diff += torch.mm(b1, b2).reshape(weight.shape)
+
                 if dora_scale is not None:
                     weight = function(weight_decompose(dora_scale, weight, lora_diff, alpha, strength, intermediate_dtype))
                 else:
