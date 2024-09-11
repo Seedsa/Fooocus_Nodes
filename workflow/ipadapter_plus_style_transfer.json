@@ -5,10 +5,7 @@
     {
       "id": 59,
       "type": "IPAdapterModelLoader",
-      "pos": [
-        830,
-        -840
-      ],
+      "pos": [830, -840],
       "size": {
         "0": 315,
         "1": 58
@@ -20,9 +17,7 @@
         {
           "name": "IPADAPTER",
           "type": "IPADAPTER",
-          "links": [
-            84
-          ],
+          "links": [84],
           "shape": 3,
           "slot_index": 0
         }
@@ -30,17 +25,12 @@
       "properties": {
         "Node name for S&R": "IPAdapterModelLoader"
       },
-      "widgets_values": [
-        "ip-adapter-plus_sdxl_vit-h.safetensors"
-      ]
+      "widgets_values": ["ip-adapter-plus_sdxl_vit-h.safetensors"]
     },
     {
       "id": 58,
       "type": "CLIPVisionLoader",
-      "pos": [
-        834,
-        -467
-      ],
+      "pos": [834, -467],
       "size": {
         "0": 315,
         "1": 58
@@ -52,9 +42,7 @@
         {
           "name": "CLIP_VISION",
           "type": "CLIP_VISION",
-          "links": [
-            82
-          ],
+          "links": [82],
           "shape": 3,
           "slot_index": 0
         }
@@ -62,17 +50,12 @@
       "properties": {
         "Node name for S&R": "CLIPVisionLoader"
       },
-      "widgets_values": [
-        "CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"
-      ]
+      "widgets_values": ["CLIP-ViT-H-14-laion2B-s32B-b79K.safetensors"]
     },
     {
       "id": 53,
       "type": "IPAdapterAdvanced",
-      "pos": [
-        1261,
-        -692
-      ],
+      "pos": [1261, -692],
       "size": {
         "0": 315,
         "1": 278
@@ -116,9 +99,7 @@
         {
           "name": "MODEL",
           "type": "MODEL",
-          "links": [
-            74
-          ],
+          "links": [74],
           "shape": 3,
           "slot_index": 0
         }
@@ -126,22 +107,12 @@
       "properties": {
         "Node name for S&R": "IPAdapterAdvanced"
       },
-      "widgets_values": [
-        1,
-        "style transfer precise",
-        "concat",
-        0,
-        1,
-        "V only"
-      ]
+      "widgets_values": [1, "style transfer precise", "concat", 0, 1, "V only"]
     },
     {
       "id": 43,
       "type": "Fooocus PreKSampler",
-      "pos": [
-        900,
-        -288
-      ],
+      "pos": [900, -288],
       "size": {
         "0": 367.79998779296875,
         "1": 374
@@ -180,18 +151,14 @@
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "links": [
-            63
-          ],
+          "links": [63],
           "slot_index": 0,
           "shape": 3
         },
         {
           "name": "model",
           "type": "MODEL",
-          "links": [
-            83
-          ],
+          "links": [83],
           "slot_index": 1,
           "shape": 3
         },
@@ -244,14 +211,8 @@
     {
       "id": 45,
       "type": "Fooocus Styles",
-      "pos": [
-        264,
-        176
-      ],
-      "size": [
-        425,
-        500
-      ],
+      "pos": [264, 176],
+      "size": [425, 500],
       "flags": {},
       "order": 2,
       "mode": 0,
@@ -259,35 +220,22 @@
         {
           "name": "fooocus_styles",
           "type": "FOOOCUS_STYLES",
-          "links": [
-            65
-          ],
+          "links": [65],
           "slot_index": 0,
           "shape": 3
         }
       ],
       "properties": {
         "Node name for S&R": "Fooocus Styles",
-        "values": [
-          "Fooocus V2"
-        ]
+        "values": ["Fooocus V2"]
       },
-      "widgets_values": [
-        "fooocus_styles",
-        "Fooocus V2"
-      ]
+      "widgets_values": ["fooocus_styles", "Fooocus V2"]
     },
     {
       "id": 3,
       "type": "Fooocus KSampler",
-      "pos": [
-        1667,
-        -286
-      ],
-      "size": [
-        572.861376464396,
-        726.1658026107945
-      ],
+      "pos": [1667, -286],
+      "size": [572.861376464396, 726.1658026107945],
       "flags": {},
       "order": 8,
       "mode": 0,
@@ -321,18 +269,12 @@
       "properties": {
         "Node name for S&R": "Fooocus KSampler"
       },
-      "widgets_values": [
-        "Preview",
-        "ComfyUI"
-      ]
+      "widgets_values": ["Preview", "ComfyUI"]
     },
     {
       "id": 60,
       "type": "PrepImageForClipVision",
-      "pos": [
-        821,
-        -675
-      ],
+      "pos": [821, -675],
       "size": {
         "0": 315,
         "1": 106
@@ -351,9 +293,7 @@
         {
           "name": "IMAGE",
           "type": "IMAGE",
-          "links": [
-            86
-          ],
+          "links": [86],
           "shape": 3,
           "slot_index": 0
         }
@@ -361,23 +301,13 @@
       "properties": {
         "Node name for S&R": "PrepImageForClipVision"
       },
-      "widgets_values": [
-        "LANCZOS",
-        "top",
-        0
-      ]
+      "widgets_values": ["LANCZOS", "top", 0]
     },
     {
       "id": 55,
       "type": "LoadImage",
-      "pos": [
-        403,
-        -689
-      ],
-      "size": [
-        315,
-        314.00001525878906
-      ],
+      "pos": [403, -689],
+      "size": [315, 314.00001525878906],
       "flags": {},
       "order": 3,
       "mode": 0,
@@ -385,9 +315,7 @@
         {
           "name": "IMAGE",
           "type": "IMAGE",
-          "links": [
-            85
-          ],
+          "links": [85],
           "shape": 3,
           "slot_index": 0
         },
@@ -401,18 +329,12 @@
       "properties": {
         "Node name for S&R": "LoadImage"
       },
-      "widgets_values": [
-        "example.png",
-        "image"
-      ]
+      "widgets_values": ["example.png", "image"]
     },
     {
       "id": 44,
       "type": "Fooocus Loader",
-      "pos": [
-        266,
-        -291
-      ],
+      "pos": [266, -291],
       "size": {
         "0": 337.3330993652344,
         "1": 390.6181945800781
@@ -431,9 +353,7 @@
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "links": [
-            64
-          ],
+          "links": [64],
           "slot_index": 0,
           "shape": 3
         }
@@ -443,6 +363,7 @@
       },
       "widgets_values": [
         "juggernautXL_v8Rundiffusion.safetensors",
+        "Baked VAE",
         "None",
         0.5,
         "joint",
@@ -457,88 +378,22 @@
     }
   ],
   "links": [
-    [
-      63,
-      43,
-      0,
-      3,
-      0,
-      "PIPE_LINE"
-    ],
-    [
-      64,
-      44,
-      0,
-      43,
-      0,
-      "PIPE_LINE"
-    ],
-    [
-      65,
-      45,
-      0,
-      43,
-      4,
-      "FOOOCUS_STYLES"
-    ],
-    [
-      74,
-      53,
-      0,
-      3,
-      1,
-      "MODEL"
-    ],
-    [
-      82,
-      58,
-      0,
-      53,
-      5,
-      "CLIP_VISION"
-    ],
-    [
-      83,
-      43,
-      1,
-      53,
-      0,
-      "MODEL"
-    ],
-    [
-      84,
-      59,
-      0,
-      53,
-      1,
-      "IPADAPTER"
-    ],
-    [
-      85,
-      55,
-      0,
-      60,
-      0,
-      "IMAGE"
-    ],
-    [
-      86,
-      60,
-      0,
-      53,
-      2,
-      "IMAGE"
-    ]
+    [63, 43, 0, 3, 0, "PIPE_LINE"],
+    [64, 44, 0, 43, 0, "PIPE_LINE"],
+    [65, 45, 0, 43, 4, "FOOOCUS_STYLES"],
+    [74, 53, 0, 3, 1, "MODEL"],
+    [82, 58, 0, 53, 5, "CLIP_VISION"],
+    [83, 43, 1, 53, 0, "MODEL"],
+    [84, 59, 0, 53, 1, "IPADAPTER"],
+    [85, 55, 0, 60, 0, "IMAGE"],
+    [86, 60, 0, 53, 2, "IMAGE"]
   ],
   "groups": [],
   "config": {},
   "extra": {
     "ds": {
       "scale": 0.6303940863128514,
-      "offset": [
-        197.24423787730422,
-        792.1259019079988
-      ]
+      "offset": [197.24423787730422, 792.1259019079988]
     }
   },
   "version": 0.4

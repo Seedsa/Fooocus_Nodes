@@ -23,7 +23,10 @@
         "Node name for S&R": "Fooocus Styles",
         "values": ["Fooocus V2", "Fooocus Enhance", "Fooocus Sharp"]
       },
-      "widgets_values": ["fooocus_styles", "Fooocus V2,Fooocus Enhance,Fooocus Sharp"]
+      "widgets_values": [
+        "fooocus_styles",
+        "Fooocus V2,Fooocus Enhance,Fooocus Sharp"
+      ]
     },
     {
       "id": 3,
@@ -250,6 +253,7 @@
       },
       "widgets_values": [
         "juggernautXL_v8Rundiffusion.safetensors",
+        "Baked VAE",
         "None",
         0.5,
         "joint",

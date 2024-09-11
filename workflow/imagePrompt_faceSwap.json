@@ -1,6 +1,6 @@
 {
-  "last_node_id": 17,
-  "last_link_id": 21,
+  "last_node_id": 15,
+  "last_link_id": 17,
   "nodes": [
     {
       "id": 5,
@@ -23,7 +23,10 @@
         "Node name for S&R": "Fooocus Styles",
         "values": ["Fooocus V2", "Fooocus Enhance", "Fooocus Sharp"]
       },
-      "widgets_values": ["fooocus_styles", "Fooocus V2,Fooocus Enhance,Fooocus Sharp"]
+      "widgets_values": [
+        "fooocus_styles",
+        "Fooocus V2,Fooocus Enhance,Fooocus Sharp"
+      ]
     },
     {
       "id": 4,
@@ -34,7 +37,7 @@
         "1": 290
       },
       "flags": {},
-      "order": 6,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -45,7 +48,7 @@
         {
           "name": "model",
           "type": "MODEL",
-          "link": null
+          "link": 13
         }
       ],
       "outputs": [
@@ -69,78 +72,9 @@
       "widgets_values": ["Preview", "ComfyUI"]
     },
     {
-      "id": 16,
-      "type": "LoadImage",
-      "pos": [30, -250],
-      "size": {
-        "0": 315,
-        "1": 314
-      },
-      "flags": {},
-      "order": 1,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "IMAGE",
-          "type": "IMAGE",
-          "links": [18],
-          "slot_index": 0,
-          "shape": 3
-        },
-        {
-          "name": "MASK",
-          "type": "MASK",
-          "links": [19],
-          "slot_index": 1,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "LoadImage"
-      },
-      "widgets_values": ["clipspace/clipspace-mask-2268587.4000000358.png [input]", "image"]
-    },
-    {
-      "id": 15,
-      "type": "Fooocus Inpaint",
-      "pos": [554, -173],
-      "size": {
-        "0": 315,
-        "1": 222
-      },
-      "flags": {},
-      "order": 3,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "image",
-          "type": "IMAGE",
-          "link": 18
-        },
-        {
-          "name": "mask",
-          "type": "MASK",
-          "link": 19
-        }
-      ],
-      "outputs": [
-        {
-          "name": "fooocus_inpaint",
-          "type": "FOOOCUS_INPAINT",
-          "links": [17],
-          "slot_index": 0,
-          "shape": 3
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "Fooocus Inpaint"
-      },
-      "widgets_values": [false, 0.618, "v2.6", false, false, false, false]
-    },
-    {
       "id": 3,
       "type": "Fooocus PreKSampler",
-      "pos": [950, 151],
+      "pos": [925, 153],
       "size": {
         "0": 324.38671875,
         "1": 423.25390625
@@ -152,7 +86,7 @@
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "link": 21
+          "link": 16
         },
         {
           "name": "image_to_latent",
@@ -167,7 +101,7 @@
         {
           "name": "fooocus_inpaint",
           "type": "FOOOCUS_INPAINT",
-          "link": 17
+          "link": null
         },
         {
           "name": "fooocus_styles",
@@ -186,7 +120,7 @@
         {
           "name": "model",
           "type": "MODEL",
-          "links": [],
+          "links": [14],
           "slot_index": 1,
           "shape": 3
         },
@@ -223,7 +157,7 @@
         4,
         "dpmpp_2m_sde_gpu",
         "karras",
-        390725578865182,
+        941627016242112,
         "randomize",
         1,
         "Simple",
@@ -235,6 +169,120 @@
         0.25,
         false
       ]
+    },
+    {
+      "id": 13,
+      "type": "Fooocus ApplyImagePrompt",
+      "pos": [1356, -169],
+      "size": {
+        "0": 254.40000915527344,
+        "1": 106
+      },
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 14
+        },
+        {
+          "name": "image_prompt_1",
+          "type": "IMAGE_PROMPT",
+          "link": 12
+        },
+        {
+          "name": "image_prompt_2",
+          "type": "IMAGE_PROMPT",
+          "link": null
+        },
+        {
+          "name": "image_prompt_3",
+          "type": "IMAGE_PROMPT",
+          "link": null
+        },
+        {
+          "name": "image_prompt_4",
+          "type": "IMAGE_PROMPT",
+          "link": null
+        }
+      ],
+      "outputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "links": [13],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus ApplyImagePrompt"
+      }
+    },
+    {
+      "id": 14,
+      "type": "LoadImage",
+      "pos": [380, -235],
+      "size": {
+        "0": 315,
+        "1": 314
+      },
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {
+          "name": "IMAGE",
+          "type": "IMAGE",
+          "links": [15],
+          "slot_index": 0,
+          "shape": 3
+        },
+        {
+          "name": "MASK",
+          "type": "MASK",
+          "links": null,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "LoadImage"
+      },
+      "widgets_values": ["example.png", "image"]
+    },
+    {
+      "id": 12,
+      "type": "Fooocus ImagePrompt",
+      "pos": [877, -206],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image_prompt",
+          "type": "IMAGE_PROMPT",
+          "links": [12],
+          "slot_index": 0,
+          "shape": 3
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "Fooocus ImagePrompt"
+      },
+      "widgets_values": ["ImagePrompt", 0.5, 0.6, false]
     },
     {
       "id": 11,
@@ -258,7 +306,7 @@
         {
           "name": "lora_stack",
           "type": "LORA_STACK",
-          "links": [20],
+          "links": [17],
           "slot_index": 0,
           "shape": 3
         }
@@ -292,10 +340,10 @@
       ]
     },
     {
-      "id": 17,
+      "id": 15,
       "type": "Fooocus Loader",
-      "pos": [298, 131],
-      "size": [400, 293.9999942779541],
+      "pos": [318, 151],
+      "size": [400, 294.00000190734863],
       "flags": {},
       "order": 4,
       "mode": 0,
@@ -303,14 +351,14 @@
         {
           "name": "optional_lora_stack",
           "type": "LORA_STACK",
-          "link": 20
+          "link": 17
         }
       ],
       "outputs": [
         {
           "name": "pipe",
           "type": "PIPE_LINE",
-          "links": [21],
+          "links": [16],
           "shape": 3,
           "slot_index": 0
         }
@@ -320,6 +368,7 @@
       },
       "widgets_values": [
         "juggernautXL_v8Rundiffusion.safetensors",
+        "Baked VAE",
         "None",
         0.5,
         "joint",
@@ -336,18 +385,19 @@
   "links": [
     [1, 3, 0, 4, 0, "PIPE_LINE"],
     [3, 5, 0, 3, 4, "FOOOCUS_STYLES"],
-    [17, 15, 0, 3, 3, "FOOOCUS_INPAINT"],
-    [18, 16, 0, 15, 0, "IMAGE"],
-    [19, 16, 1, 15, 1, "MASK"],
-    [20, 11, 0, 17, 0, "LORA_STACK"],
-    [21, 17, 0, 3, 0, "PIPE_LINE"]
+    [12, 12, 0, 13, 1, "IMAGE_PROMPT"],
+    [13, 13, 0, 4, 1, "MODEL"],
+    [14, 3, 1, 13, 0, "MODEL"],
+    [15, 14, 0, 12, 0, "IMAGE"],
+    [16, 15, 0, 3, 0, "PIPE_LINE"],
+    [17, 11, 0, 15, 0, "LORA_STACK"]
   ],
   "groups": [],
   "config": {},
   "extra": {
     "ds": {
       "scale": 0.7513148009015777,
-      "offset": [333.4422473832587, 286.3776134786903]
+      "offset": [333.6086223832587, 234.5050080099403]
     }
   },
   "version": 0.4

@@ -23,7 +23,10 @@
         "Node name for S&R": "Fooocus Styles",
         "values": ["Fooocus V2", "Fooocus Enhance", "Fooocus Sharp"]
       },
-      "widgets_values": ["fooocus_styles", "Fooocus V2,Fooocus Enhance,Fooocus Sharp"]
+      "widgets_values": [
+        "fooocus_styles",
+        "Fooocus V2,Fooocus Enhance,Fooocus Sharp"
+      ]
     },
     {
       "id": 8,
@@ -48,7 +51,16 @@
       "properties": {
         "Node name for S&R": "Fooocus samLoaderPipe"
       },
-      "widgets_values": ["sam_vit_b_01ec64.pth", "AUTO", "center-1", 0, 0.93, 0, 0.7, "False"]
+      "widgets_values": [
+        "sam_vit_b_01ec64.pth",
+        "AUTO",
+        "center-1",
+        0,
+        0.93,
+        0,
+        0.7,
+        "False"
+      ]
     },
     {
       "id": 7,
@@ -351,6 +363,7 @@
       },
       "widgets_values": [
         "juggernautXL_v8Rundiffusion.safetensors",
+        "Baked VAE",
         "None",
         0.5,
         "joint",
