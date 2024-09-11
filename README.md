@@ -11,17 +11,6 @@
 1. Navigate to the cloned repo e.g. `custom_nodes/Fooocus_Nodes`
 2. `git pull`
 
-# Model Cache
-
-For improved model switch performance with RAM > 40GB, you can enable model caching:
-
-Open /py/modules/config.py
-Set use_model_cache to True:
-
-```
-use_model_cache = True
-```
-
 # Comparisons
 
 reproduce the same images generated from Fooocus on ComfyUI

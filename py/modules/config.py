@@ -39,7 +39,6 @@ path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[-1]
 
 path_wildcards = os.path.join(Path(__file__).parent.parent.parent, "wildcards")
 
-use_model_cache = False
 default_refiner_model_name = "None"
 default_base_model_name = "juggernautXL_v8Rundiffusion.safetensors"
 default_loras = [
