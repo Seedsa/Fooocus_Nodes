@@ -115,6 +115,7 @@ class FooocusLoader:
         return {
             "required": {
                 "base_model_name": (folder_paths.get_filename_list("checkpoints"), {"default": "juggernautXL_v8Rundiffusion.safetensors"},),
+                "vae_name": (["Baked VAE"] + folder_paths.get_filename_list("vae"),),
                 "refiner_model_name": (["None"] + folder_paths.get_filename_list("checkpoints"), {"default": "None"},),
                 "refiner_switch": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1, "step": 0.1},),
                 "refiner_swap_method": (["joint", "separate", "vae"],),
@@ -166,10 +167,12 @@ class FooocusLoader:
         }
         positive_prompt = kwargs["positive"]
         negative_prompt = kwargs["negative"]
+        vae_name = kwargs["vae_name"]
         pipe.update(
             {
                 "positive_prompt": positive_prompt,
                 "negative_prompt": negative_prompt,
+                "vae_name": vae_name,
                 "latent_width": empty_latent_width,
                 "latent_height": empty_latent_height,
                 "optional_lora_stack": optional_lora_stack,
@@ -249,6 +252,7 @@ class FooocusPreKSampler:
         sharpness = kwargs.get('sharpness')
         guidance_scale = kwargs.get("cfg")
         base_model_name = pipe["base_model_name"]
+        vae_name = pipe["vae_name"]
         refiner_model_name = pipe["refiner_model_name"]
         refiner_switch = pipe["refiner_switch"]
         clip_skip = pipe["clip_skip"]
@@ -428,6 +432,7 @@ class FooocusPreKSampler:
                 loras=loras,
                 base_model_additional_loras=base_model_additional_loras,
                 use_synthetic_refiner=use_synthetic_refiner,
+                vae_name=vae_name
             )
             pipeline.set_clip_skip(clip_skip)
             log_node_info('Processing prompts ...')
