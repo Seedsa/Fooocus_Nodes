@@ -3,7 +3,6 @@ import folder_paths
 from pathlib import Path
 from .model_loader import load_file_from_url
 from .flags import inpaint_engine_versions
-import yaml
 
 BASE_RESOLUTIONS = [
     (512, 512),
@@ -34,7 +33,7 @@ BASE_RESOLUTIONS = [
 
 wildcard_filenames = []
 path_controlnet = folder_paths.get_folder_paths("controlnet")[0]
-path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[-1]
+path_fooocus_expansion = folder_paths.get_folder_paths("fooocus_expansion")[0]
 
 
 path_wildcards = os.path.join(Path(__file__).parent.parent.parent, "wildcards")

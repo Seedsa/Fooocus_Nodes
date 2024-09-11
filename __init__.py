@@ -8,20 +8,24 @@ import importlib
 import shutil
 import folder_paths
 import filecmp
+def add_folder_path_and_extensions(folder_name, full_folder_paths, extensions):
+    for full_folder_path in full_folder_paths:
+        folder_paths.add_model_folder_path(folder_name, full_folder_path)
+    if folder_name in folder_paths.folder_names_and_paths:
+        current_paths, current_extensions = folder_paths.folder_names_and_paths[folder_name]
+        updated_extensions = current_extensions | extensions
+        folder_paths.folder_names_and_paths[folder_name] = (current_paths, updated_extensions)
+    else:
+        folder_paths.folder_names_and_paths[folder_name] = (full_folder_paths, extensions)
 
-def create_folder_and_update_paths(folder_name):
-    folder_path = os.path.join(folder_paths.models_dir, folder_name)
-    os.makedirs(folder_path, exist_ok=True)
-    folder_paths.folder_names_and_paths[folder_name] = (
-        [
-            folder_path,
-            *folder_paths.folder_names_and_paths.get(folder_name, [[], set()])[0]
-        ],
-        folder_paths.supported_pt_extensions
-    )
-create_folder_and_update_paths("fooocus_expansion")
-create_folder_and_update_paths("inpaint")
-create_folder_and_update_paths("ipadapter")
+model_path = folder_paths.models_dir
+add_folder_path_and_extensions("ultralytics_bbox", [os.path.join(model_path, "ultralytics", "bbox")], folder_paths.supported_pt_extensions)
+add_folder_path_and_extensions("ultralytics_segm", [os.path.join(model_path, "ultralytics", "segm")], folder_paths.supported_pt_extensions)
+add_folder_path_and_extensions("ultralytics", [os.path.join(model_path, "ultralytics")], folder_paths.supported_pt_extensions)
+add_folder_path_and_extensions("sams", [os.path.join(model_path, "sams")], folder_paths.supported_pt_extensions)
+add_folder_path_and_extensions("ipadapter", [os.path.join(model_path, "ipadapter")], folder_paths.supported_pt_extensions)
+add_folder_path_and_extensions("inpaint", [os.path.join(model_path, "inpaint")], folder_paths.supported_pt_extensions)
+add_folder_path_and_extensions("fooocus_expansion", [os.path.join(model_path, "fooocus_expansion")], folder_paths.supported_pt_extensions)
 
 from .py.modules.model_loader import load_file_from_url
 from .py.modules.config import (
