@@ -28,7 +28,11 @@ import comfy.utils
 import comfy.float
 import comfy.model_management
 import comfy.lora
-from comfy.types import UnetWrapperFunction
+try:
+    from comfy.comfy_types import UnetWrapperFunction
+except Exception:
+    from comfy.types import UnetWrapperFunction
+
 
 def string_to_seed(data):
     crc = 0xFFFFFFFF
