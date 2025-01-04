@@ -606,7 +606,7 @@ def patch_all():
     patch_all_precision()
     patch_all_clip()
     comfy.lora.calculate_weight = calculate_weight_patched
-    # ldm_patched.modules.model_patcher.ModelPatcher.calculate_weight = calculate_weight_patched
+    # ldm_patched.modules.model_patcher.FooocusModelPatcher.calculate_weight = calculate_weight_patched
     ldm_patched.controlnet.cldm.ControlNet.forward = patched_cldm_forward
     ldm_patched.ldm.modules.diffusionmodules.openaimodel.UNetModel.forward = patched_unet_forward
     ldm_patched.modules.model_base.SDXL.encode_adm = sdxl_encode_adm_patched

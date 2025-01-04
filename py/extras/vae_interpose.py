@@ -6,7 +6,7 @@ import safetensors.torch as sf
 import torch.nn as nn
 import comfy.model_management
 
-from ldm_patched.modules.model_patcher import ModelPatcher
+from ldm_patched.modules.model_patcher import FooocusModelPatcher
 import folder_paths
 
 class Block(nn.Module):
@@ -78,7 +78,7 @@ def parse(x):
         fp16 = comfy.model_management.should_use_fp16()
         if fp16:
             model = model.half()
-        vae_approx_model = ModelPatcher(
+        vae_approx_model = FooocusModelPatcher(
             model=model,
             load_device=comfy.model_management.get_torch_device(),
             offload_device=torch.device('cpu')

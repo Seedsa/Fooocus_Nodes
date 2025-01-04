@@ -13,7 +13,7 @@ import comfy.model_management as model_management
 from transformers.generation.logits_process import LogitsProcessorList
 from transformers import AutoTokenizer, AutoModelForCausalLM, set_seed
 from modules.config import path_fooocus_expansion
-from ldm_patched.modules.model_patcher import ModelPatcher
+from ldm_patched.modules.model_patcher import FooocusModelPatcher
 
 
 # limitation of np.random.seed(), called from transformers.set_seed()
@@ -75,7 +75,7 @@ class FooocusExpansion:
         if use_fp16:
             self.model.half()
 
-        self.patcher = ModelPatcher(self.model, load_device=load_device, offload_device=offload_device)
+        self.patcher = FooocusModelPatcher(self.model, load_device=load_device, offload_device=offload_device)
         print(f'Fooocus Expansion engine loaded for {load_device}, use_fp16 = {use_fp16}.')
 
     @torch.no_grad()
