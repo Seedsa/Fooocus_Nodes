@@ -162,7 +162,7 @@ def patched_ClipVisionModel__init__(self, json_config):
             self.model = CLIPVisionModelWithProjection(config)
 
     self.model.to(self.dtype)
-    self.patcher = ldm_patched.modules.model_patcher.ModelPatcher(
+    self.patcher = ldm_patched.modules.model_patcher.FooocusModelPatcher(
         self.model,
         load_device=self.load_device,
         offload_device=self.offload_device

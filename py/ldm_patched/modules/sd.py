@@ -102,7 +102,7 @@ class CLIP:
         self.cond_stage_model = clip(**(params))
 
         self.tokenizer = tokenizer(embedding_directory=embedding_directory)
-        self.patcher = ldm_patched.modules.model_patcher.ModelPatcher(self.cond_stage_model, load_device=load_device, offload_device=offload_device)
+        self.patcher = ldm_patched.modules.model_patcher.FooocusModelPatcher(self.cond_stage_model, load_device=load_device, offload_device=offload_device)
         self.layer_idx = None
 
     def clone(self):
@@ -202,7 +202,7 @@ class VAE:
         self.first_stage_model.to(self.vae_dtype)
         self.output_device = model_management.intermediate_device()
 
-        self.patcher = ldm_patched.modules.model_patcher.ModelPatcher(self.first_stage_model, load_device=self.device, offload_device=offload_device)
+        self.patcher = ldm_patched.modules.model_patcher.FooocusModelPatcher(self.first_stage_model, load_device=self.device, offload_device=offload_device)
 
     def decode_tiled_(self, samples, tile_x=64, tile_y=64, overlap = 16):
         steps = samples.shape[0] * ldm_patched.modules.utils.get_tiled_scale_steps(samples.shape[3], samples.shape[2], tile_x, tile_y, overlap)
@@ -345,7 +345,7 @@ def load_gligen(ckpt_path):
     model = gligen.load_gligen(data)
     if model_management.should_use_fp16():
         model = model.half()
-    return ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=model_management.unet_offload_device())
+    return ldm_patched.modules.model_patcher.FooocusModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=model_management.unet_offload_device())
 
 def load_checkpoint(config_path=None, ckpt_path=None, output_vae=True, output_clip=True, embedding_directory=None, state_dict=None, config=None):
     #TODO: this function is a mess and should be removed eventually
@@ -429,7 +429,7 @@ def load_checkpoint(config_path=None, ckpt_path=None, output_vae=True, output_cl
             w.cond_stage_model = clip.cond_stage_model.clip_l
         load_clip_weights(w, state_dict)
 
-    return (ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=offload_device), clip, vae)
+    return (ldm_patched.modules.model_patcher.FooocusModelPatcher(model, load_device=model_management.get_torch_device(), offload_device=offload_device), clip, vae)
 
 def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, output_clipvision=False, embedding_directory=None, output_model=True, vae_filename_param=None):
     sd = ldm_patched.modules.utils.load_torch_file(ckpt_path)
@@ -489,7 +489,7 @@ def load_checkpoint_guess_config(ckpt_path, output_vae=True, output_clip=True, o
         print("left over keys:", left_over)
 
     if output_model:
-        model_patcher = ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=load_device, offload_device=model_management.unet_offload_device())
+        model_patcher = ldm_patched.modules.model_patcher.FooocusModelPatcher(model, load_device=load_device, offload_device=model_management.unet_offload_device())
         if inital_load_device != torch.device("cpu"):
             print("loaded straight to GPU")
             model_management.load_model_gpu(model_patcher)
@@ -530,7 +530,7 @@ def load_unet_state_dict(sd): #load unet in diffusers format
     left_over = sd.keys()
     if len(left_over) > 0:
         print("left over keys in unet:", left_over)
-    return ldm_patched.modules.model_patcher.ModelPatcher(model, load_device=load_device, offload_device=offload_device)
+    return ldm_patched.modules.model_patcher.FooocusModelPatcher(model, load_device=load_device, offload_device=offload_device)
 
 def load_unet(unet_path):
     sd = ldm_patched.modules.utils.load_torch_file(unet_path)
