@@ -7,12 +7,14 @@ import ldm_patched.modules.conds
 import ldm_patched.modules.ops
 from enum import Enum
 from . import utils
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from comfy.model_patcher import ModelPatcher
 
 class ModelType(Enum):
     EPS = 1
     V_PREDICTION = 2
     V_PREDICTION_EDM = 3
-
 
 from ldm_patched.modules.model_sampling import EPS, V_PREDICTION, ModelSamplingDiscrete, ModelSamplingContinuousEDM
 
@@ -42,6 +44,7 @@ class BaseModel(torch.nn.Module):
         self.latent_format = model_config.latent_format
         self.model_config = model_config
         self.manual_cast_dtype = model_config.manual_cast_dtype
+        self.current_patcher: 'ModelPatcher' = None
 
         if not unet_config.get("disable_unet_model_creation", False):
             if self.manual_cast_dtype is not None:

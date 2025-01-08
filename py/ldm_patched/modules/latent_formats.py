@@ -2,7 +2,9 @@
 class LatentFormat:
     scale_factor = 1.0
     latent_channels = 4
+    latent_dimensions = 2
     latent_rgb_factors = None
+    latent_rgb_factors_bias = None
     taesd_decoder_name = None
 
     def process_in(self, latent):
@@ -24,17 +26,26 @@ class SD15(LatentFormat):
         self.taesd_decoder_name = "taesd_decoder"
 
 class SDXL(LatentFormat):
+    scale_factor = 0.13025
+
     def __init__(self):
-        self.scale_factor = 0.13025
         self.latent_rgb_factors = [
                     #   R        G        B
-                    [ 0.3920,  0.4054,  0.4549],
-                    [-0.2634, -0.0196,  0.0653],
-                    [ 0.0568,  0.1687, -0.0755],
-                    [-0.3112, -0.2359, -0.2076]
+                    [ 0.3651,  0.4232,  0.4341],
+                    [-0.2533, -0.0042,  0.1068],
+                    [ 0.1076,  0.1111, -0.0362],
+                    [-0.3165, -0.2492, -0.2188]
                 ]
+        self.latent_rgb_factors_bias = [ 0.1084, -0.0175, -0.0011]
+
         self.taesd_decoder_name = "taesdxl_decoder"
 
 class SD_X4(LatentFormat):
     def __init__(self):
         self.scale_factor = 0.08333
+        self.latent_rgb_factors = [
+            [-0.2340, -0.3863, -0.3257],
+            [ 0.0994,  0.0885, -0.0908],
+            [-0.2833, -0.2349, -0.3741],
+            [ 0.2523, -0.0055, -0.1651]
+        ]
